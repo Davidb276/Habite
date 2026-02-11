@@ -63,6 +63,10 @@ class Pedido(models.Model):
     def __str__(self):
         return f"Pedido #{self.id}"
 
+class PedidoItem(models.Model):
+    pedido = models.ForeignKey(Pedido, related_name="items", on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField()
 
 # ===================== PAGO =====================
 class Pago(models.Model):
