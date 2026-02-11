@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Habité - Catálogo Premium</title>
+</head>
+<body>
+    <h1>Habité | Productos Premium para el Hogar</h1>
+
+    {% for p in productos %}
+        <div style="border:1px solid black; padding:10px; margin:10px;">
+            <h3>{{ p.nombre }}</h3>
+            <p>{{ p.descripcion }}</p>
+            <p><b>Precio:</b> ${{ p.precio }}</p>
+        </div>
+    {% empty %}
+        <p>No hay productos aún.</p>
+    {% endfor %}
+</body>
+</html>
