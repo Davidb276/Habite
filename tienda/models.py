@@ -20,9 +20,6 @@ class Producto(models.Model):
     descripcion = models.TextField()
     es_premium = models.BooleanField(default=True)
 
-    def verificar_disponibilidad(self):
-        return self.inventario.cantidad_disponible > 0
-
     def __str__(self):
         return self.nombre
 
@@ -32,10 +29,8 @@ class Inventario(models.Model):
     producto = models.OneToOneField(Producto, on_delete=models.CASCADE, related_name="inventario")
     cantidad_disponible = models.IntegerField()
 
-    def reducir_stock(self, cantidad):
-        if self.cantidad_disponible >= cantidad:
-            self.cantidad_disponible -= cantidad
-            self.save()
+    def __str__(self):
+        return f"{self.producto.nombre} - {self.cantidad_disponible} disponibles"
 
 
 # ===================== CARRITO =====================
@@ -54,12 +49,6 @@ class Pedido(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     estado = models.CharField(max_length=50, default="Pendiente")
 
-    def calcular_total(self):
-        total = sum(item.producto.precio for item in self.items.all())
-        self.total = total
-        self.save()
-        return total
-
     def __str__(self):
         return f"Pedido #{self.id}"
 
@@ -75,9 +64,8 @@ class Pago(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=50, default="Pendiente")
 
-    def procesar_pago(self):
-        self.estado = "Pagado"
-        self.save()
+    def __str__(self):
+        return f"Pago #{self.id} - {self.estado}"
 
 
 # ===================== ENVIO =====================
@@ -86,6 +74,5 @@ class Envio(models.Model):
     direccion_entrega = models.TextField()
     estado_envio = models.CharField(max_length=50, default="Preparando")
 
-    def actualizar_estado(self, nuevo_estado):
-        self.estado_envio = nuevo_estado
-        self.save()
+    def __str__(self):
+        return f"Envío para Pedido #{self.pedido.id} - {self.estado_envio}"
