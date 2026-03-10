@@ -1,19 +1,222 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Habité - Catálogo Premium</title>
-</head>
-<body>
-    <h1>Habité | Productos Premium para el Hogar</h1>
 
-    {% for p in productos %}
-        <div style="border:1px solid black; padding:10px; margin:10px;">
-            <h3>{{ p.nombre }}</h3>
-            <p>{{ p.descripcion }}</p>
-            <p><b>Precio:</b> ${{ p.precio }}</p>
-        </div>
-    {% empty %}
-        <p>No hay productos aún.</p>
-    {% endfor %}
+<title>Habité | Artículos Premium para el Hogar</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    margin:0;
+    background:#f5f5f5;
+}
+
+/* HEADER */
+
+header{
+    background:#1f2933;
+    color:white;
+    padding:20px;
+    text-align:center;
+    font-size:28px;
+}
+
+/* CONTENEDOR PRINCIPAL */
+
+.container{
+    width:90%;
+    margin:auto;
+    margin-top:30px;
+}
+
+/* GRID PRODUCTOS */
+
+.productos{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+    gap:25px;
+}
+
+/* CARD PRODUCTO */
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+    text-align:center;
+}
+
+.card h3{
+    margin-bottom:10px;
+}
+
+.card p{
+    color:#555;
+}
+
+.card input{
+    width:60px;
+    padding:5px;
+    margin:10px;
+}
+
+.card button{
+    background:#2c7be5;
+    border:none;
+    color:white;
+    padding:10px 15px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+.card button:hover{
+    background:#1a5dc8;
+}
+
+/* CARRITO */
+
+.carrito{
+    margin-top:40px;
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+}
+
+.carrito h2{
+    margin-bottom:15px;
+}
+
+.total{
+    margin-top:15px;
+    font-weight:bold;
+}
+
+.crear-btn{
+    margin-top:15px;
+    background:#28a745;
+    padding:12px;
+    color:white;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+.crear-btn:hover{
+    background:#1f8a38;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+Habité | Artículos Premium para el Hogar
+</header>
+
+<div class="container">
+
+<h2>Catálogo</h2>
+
+<div class="productos">
+
+{% for producto in productos %}
+
+<div class="card">
+
+<h3>{{ producto.nombre }}</h3>
+
+<p>Precio: ${{ producto.precio }}</p>
+
+<input type="number" id="cantidad-{{ producto.id }}" value="1" min="1">
+
+<br>
+
+<button onclick="agregarProducto({{ producto.id }}, {{ producto.precio }})">
+Agregar al carrito
+</button>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+<div class="carrito">
+
+<h2>Carrito</h2>
+
+<ul id="lista-pedido"></ul>
+
+<div class="total">
+Total: $<span id="total">0</span>
+</div>
+
+<button class="crear-btn" onclick="crearPedido()">
+Crear Pedido
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let pedido = []
+let total = 0
+
+function agregarProducto(id, precio){
+
+    let cantidad = document.getElementById("cantidad-"+id).value
+
+    cantidad = parseInt(cantidad)
+
+    pedido.push([id,cantidad])
+
+    let lista = document.getElementById("lista-pedido")
+
+    let item = document.createElement("li")
+
+    item.innerText = "Producto " + id + " x " + cantidad
+
+    lista.appendChild(item)
+
+    total += precio * cantidad
+
+    document.getElementById("total").innerText = total
+}
+
+
+function agregarProducto(id, precio){
+
+    id = parseInt(id)
+    precio = parseFloat(precio)
+
+    let cantidad = document.getElementById("cantidad-"+id).value
+
+    cantidad = parseInt(cantidad)
+
+    pedido.push([id,cantidad])
+
+    let lista = document.getElementById("lista-pedido")
+
+    let item = document.createElement("li")
+
+    item.innerText = "Producto " + id + " x " + cantidad
+
+    lista.appendChild(item)
+
+    total += precio * cantidad
+
+    document.getElementById("total").innerText = total
+}
+
+</script>
+
 </body>
 </html>
