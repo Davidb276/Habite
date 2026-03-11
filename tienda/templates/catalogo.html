@@ -378,6 +378,128 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* MODAL DETALLADO */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--verde);
+        }
+
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--verde);
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            margin-left: 12px;
+        }
+
+        .modal-section {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: var(--gris-claro);
+            border-radius: 8px;
+        }
+
+        .modal-section-title {
+            color: var(--verde);
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: var(--texto-oscuro);
+            font-size: 14px;
+            border-bottom: 1px solid #e8ddf3;
+        }
+
+        .modal-item:last-child {
+            border-bottom: none;
+        }
+
+        .modal-label {
+            font-weight: 500;
+            color: var(--texto-gris);
+        }
+
+        .modal-value {
+            font-weight: 600;
+            color: var(--texto-oscuro);
+        }
+
+        .modal-close {
+            background: var(--verde);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 28px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .modal-close:hover {
+            background: var(--verde-oscuro);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         @keyframes slideIn {
             from {
                 transform: translateX(400px);
@@ -517,35 +639,60 @@
                 return;
             }
 
-            // Agregar al carrito
-            pedido.push({
+            // Datos para enviar al servidor
+            const datos = {
+                cliente_id: 1,  // Cliente por defecto
                 producto_id: id,
-                producto_nombre: nombre,
-                cantidad: cantidad,
-                precio: precio
+                cantidad: cantidad
+            };
+
+            // Mostrar loading en el botón
+            const btn = event.target;
+            const btnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agregando...';
+
+            // GUARDAR EN EL SERVIDOR (no solo en JS local)
+            fetch("/api/carrito/agregar/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken") || ""
+                },
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.carrito) {
+                    // Actualizar UI con datos del servidor
+                    actualizarCarritoDesdeServidor(data.carrito);
+                    mostrarMensaje("✓ " + nombre + " agregado al carrito", "success");
+                    
+                    // Resetear input
+                    document.getElementById("cantidad-" + id).value = 1;
+                } else {
+                    mostrarMensaje("❌ Error: " + (data.error || "No se pudo agregar"), "error");
+                }
+            })
+            .catch(error => {
+                mostrarMensaje("❌ Error de red: " + error.message, "error");
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = btnText;
             });
-
-            // Actualizar UI
-            actualizarCarrito();
-
-            // Resetear input
-            document.getElementById("cantidad-" + id).value = 1;
-
-            // Feedback visual
-            mostrarMensaje("✓ " + nombre + " agregado al carrito", "success");
         }
 
-        function actualizarCarrito() {
+        function actualizarCarritoDesdeServidor(carritoData) {
+            // Actualizar desde los datos del servidor
             const lista = document.getElementById("lista-pedido");
             const countSpan = document.getElementById("cart-count");
             const totalSpan = document.getElementById("total");
             const btn = document.getElementById("btn-checkout");
 
-            // Limpiar lista
             lista.innerHTML = "";
-            total = 0;
 
-            if (pedido.length === 0) {
+            if (!carritoData.items || carritoData.items.length === 0) {
                 lista.innerHTML = `
                     <li class="empty-message">
                         <i class="fas fa-inbox" style="font-size: 32px; color: var(--beige-oscuro);"></i>
@@ -558,44 +705,38 @@
                 return;
             }
 
-            // Agregar items
-            pedido.forEach(item => {
-                const subtotal = item.precio * item.cantidad;
-                total += subtotal;
-
+            // Agregar items del servidor
+            carritoData.items.forEach(item => {
                 const li = document.createElement("li");
                 li.innerHTML = `
                     <div>
                         <div class="cart-item-name">${item.producto_nombre}</div>
-                        <div class="cart-item-qty">x${item.cantidad} @ $${item.precio.toFixed(2)}</div>
+                        <div class="cart-item-qty">x${item.cantidad} @ $${item.precio_unitario.toFixed(2)}</div>
                     </div>
-                    <div class="cart-item-price">$${subtotal.toFixed(2)}</div>
+                    <div class="cart-item-price">$${item.subtotal.toFixed(2)}</div>
                 `;
                 lista.appendChild(li);
             });
 
             // Actualizar totales
-            countSpan.textContent = pedido.length;
-            totalSpan.textContent = total.toFixed(2);
+            countSpan.textContent = carritoData.cantidad_items;
+            totalSpan.textContent = carritoData.total.toFixed(2);
             btn.disabled = false;
         }
 
         function crearPedido() {
-            if (pedido.length === 0) {
+            const countSpan = document.getElementById("cart-count");
+            
+            if (countSpan.textContent === "0") {
                 mostrarMensaje("Agrega productos al carrito", "error");
                 return;
             }
 
-            // Cliente por defecto (ID 1)
-            const clienteId = 1;
-
-            // Preparar datos según API
+            // Datos para checkout
             const datos = {
-                cliente_id: clienteId,
-                productos: pedido.map(item => ({
-                    producto_id: item.producto_id,
-                    cantidad: item.cantidad
-                }))
+                cliente_id: 1,
+                metodo_pago: "Tarjeta de Crédito",
+                direccion_entrega: "Dirección de entrega predeterminada"
             };
 
             // Mostrar loading
@@ -604,10 +745,8 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-            console.log("Enviando datos:", JSON.stringify(datos));
-
-            // Enviar a API (servicio de aplicación)
-            fetch("/api/pedidos/", {
+            // Enviar a API de CHECKOUT
+            fetch("/api/carrito/checkout/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -616,12 +755,7 @@
                 body: JSON.stringify(datos)
             })
             .then(response => {
-                console.log("Status:", response.status);
-                console.log("Content-Type:", response.headers.get("content-type"));
-                
-                // Intentar parsear como JSON primero
                 return response.text().then(text => {
-                    console.log("Response body:", text);
                     try {
                         return {
                             status: response.status,
@@ -630,29 +764,38 @@
                     } catch(e) {
                         return {
                             status: response.status,
-                            data: { error: "Respuesta inválida del servidor: " + text.substring(0, 100) }
+                            data: { error: "Respuesta inválida del servidor" }
                         };
                     }
                 });
             })
             .then(response => {
                 if (response.status === 201) {
-                    mostrarMensaje(
-                        "✓ ¡Pedido creado!\nID: #" + response.data.id + "\nTotal: $" + response.data.total,
-                        "success"
-                    );
+                    const compra = response.data.compra;
 
-                    // Limpiar carrito
-                    pedido = [];
-                    actualizarCarrito();
+                    // Mostrar modal con toda la información
+                    mostrarMensajeDetallado({
+                        compra: compra
+                    }, "success");
+
+                    // Limpiar carrito en UI
+                    document.getElementById("lista-pedido").innerHTML = `
+                        <li class="empty-message">
+                            <i class="fas fa-inbox" style="font-size: 32px; color: var(--beige-oscuro);"></i>
+                            <p style="margin-top: 12px;">Tu carrito está vacío</p>
+                        </li>
+                    `;
+                    document.getElementById("cart-count").textContent = "0";
+                    document.getElementById("total").textContent = "0.00";
+                    btn.disabled = true;
                     btn.innerHTML = btnText;
                 } else if (response.status === 400 || response.status === 404) {
-                    const error = response.data.error || response.data.detalles || "Datos inválidos";
+                    const error = response.data.error || "Error desconocido";
                     mostrarMensaje("❌ Error: " + error, "error");
                     btn.disabled = false;
                     btn.innerHTML = btnText;
                 } else if (response.status === 409) {
-                    mostrarMensaje("❌ Stock insuficiente para uno de los productos", "error");
+                    mostrarMensaje("❌ Stock insuficiente", "error");
                     btn.disabled = false;
                     btn.innerHTML = btnText;
                 } else {
@@ -680,6 +823,97 @@
                 div.style.animation = "slideOut 0.3s ease-out";
                 setTimeout(() => div.remove(), 300);
             }, 3000);
+        }
+
+        function mostrarMensajeDetallado(compra, tipo) {
+            const { pedido, pago, envio } = compra.compra || compra;
+
+            const html = `
+                <div class="modal-overlay" onclick="this.remove()">
+                    <div class="modal-content" onclick="event.stopPropagation()">
+                        <!-- Header -->
+                        <div class="modal-header">
+                            <i class="fas fa-check-circle" style="font-size: 32px; color: #28a745;"></i>
+                            <h2 class="modal-title">¡Compra Exitosa!</h2>
+                        </div>
+
+                        <!-- PEDIDO -->
+                        <div class="modal-section">
+                            <div class="modal-section-title">
+                                <i class="fas fa-box"></i> Pedido
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">ID Pedido:</span>
+                                <span class="modal-value">#${pedido.id}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Estado:</span>
+                                <span class="modal-value">${pedido.estado}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Total:</span>
+                                <span class="modal-value" style="color: var(--verde); font-size: 16px;">$${parseFloat(pedido.total).toFixed(2)}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Items:</span>
+                                <span class="modal-value">${pedido.items.length} producto${pedido.items.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Fecha:</span>
+                                <span class="modal-value">${pedido.fecha}</span>
+                            </div>
+                        </div>
+
+                        <!-- PAGO -->
+                        <div class="modal-section">
+                            <div class="modal-section-title">
+                                <i class="fas fa-credit-card"></i> Pago
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">ID Pago:</span>
+                                <span class="modal-value">#${pago.id}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Método:</span>
+                                <span class="modal-value">${pago.metodo_pago}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Monto:</span>
+                                <span class="modal-value">$${parseFloat(pago.monto).toFixed(2)}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Estado:</span>
+                                <span class="modal-value" style="color: #28a745;">✓ ${pago.estado}</span>
+                            </div>
+                        </div>
+
+                        <!-- ENVÍO -->
+                        <div class="modal-section">
+                            <div class="modal-section-title">
+                                <i class="fas fa-truck"></i> Envío
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">ID Envío:</span>
+                                <span class="modal-value">#${envio.id}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Dirección:</span>
+                                <span class="modal-value">${envio.direccion_entrega}</span>
+                            </div>
+                            <div class="modal-item">
+                                <span class="modal-label">Estado:</span>
+                                <span class="modal-value">${envio.estado_envio}</span>
+                            </div>
+                        </div>
+
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                            <i class="fas fa-check"></i> Cerrar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
         }
 
         function getCookie(name) {

@@ -1,7 +1,7 @@
 from django.db import transaction
 from tienda.domain.builders import PedidoBuilder
-from tienda.infra.factories import NotificadorFactory
-from tienda.models import Cliente, Producto, Pedido, Inventario, Pago, Envio
+from tienda.infra.factories import NotificadorFactory, PasarelaFactory
+from tienda.models import Cliente, Producto, Pedido, Inventario, Pago, Envio, Carrito, CarritoItem
 from django.core.exceptions import ValidationError
 
 
@@ -34,7 +34,7 @@ class InventarioService:
 
 
 class PedidoService:
-    """Orquesta la lógica de creación y gestión de pedidos."""
+    """dirige la lógica de creación y gestión de pedidos."""
     
     def __init__(self):
         self.notificador = NotificadorFactory.crear_notificador()
@@ -112,10 +112,26 @@ class PedidoService:
 class PagoService:
     """Gestiona la lógica de procesamiento de pagos."""
     
-    @staticmethod
-    def procesear_pago(pedido_id, metodo_pago, monto):
+    def __init__(self, pasarela=None):
         """
-        Procesa el pago de un pedido.
+        Inyección de dependencias para cumplir DIP.
+        
+        Args:
+            pasarela: Instancia de pasarela de pago (default: PasarelaFactory)
+        """
+        self.pasarela = pasarela or PasarelaFactory.crear_pasarela()
+    
+    def procesear_pago(self, pedido_id, metodo_pago, monto):
+        """
+        Procesa el pago de un pedido usando la pasarela inyectada.
+        
+        Args:
+            pedido_id: ID del pedido
+            metodo_pago: Método de pago (Tarjeta de Crédito, PayPal, etc.)
+            monto: Monto a procesar
+        
+        Returns:
+            Pago: Registro de pago creado
         
         Raises:
             ValidationError: Si el pedido no existe o hay conflicto
@@ -129,7 +145,13 @@ class PagoService:
         if monto != pedido.total:
             raise ValidationError(f"Monto incorrecto. Total esperado: {pedido.total}")
         
-        # Crear registro de pago
+        # Delegar procesamiento a la pasarela (cumple SRP y DIP)
+        resultado_pago = self.pasarela.procesar(monto, metodo_pago)
+        
+        if not resultado_pago.get('exito'):
+            raise ValidationError(f"Error en pasarela: {resultado_pago.get('mensaje', 'Error desconocido')}")
+        
+        # Crear registro de pago en BD
         pago = Pago.objects.create(
             pedido=pedido,
             metodo_pago=metodo_pago,
@@ -180,3 +202,133 @@ class EnvioService:
             return envio
         except Envio.DoesNotExist:
             raise ValidationError("Envío no encontrado")
+
+
+class CartService:
+    """Gestiona la lógica del carrito de compras."""
+    
+    def __init__(self, pedido_service=None, pago_service=None, envio_service=None):
+        """
+        Inyección de dependencias para cumplir DIP (Dependency Inversion Principle).
+        
+        Args:
+            pedido_service: Servicio de pedidos (default: PedidoService)
+            pago_service: Servicio de pagos (default: PagoService)
+            envio_service: Servicio de envíos (default: EnvioService)
+        """
+        self.pedido_service = pedido_service or PedidoService()
+        self.pago_service = pago_service or PagoService()
+        self.envio_service = envio_service or EnvioService()
+    
+    @staticmethod
+    def obtener_o_crear_carrito(cliente_id):
+        """Obtiene o crea el carrito para un cliente."""
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+        except Cliente.DoesNotExist:
+            raise ValidationError("Cliente no encontrado")
+        
+        carrito, created = Carrito.objects.get_or_create(cliente=cliente)
+        return carrito
+    
+    @staticmethod
+    def agregar_item(cliente_id, producto_id, cantidad):
+        """Agrega un producto al carrito o actualiza su cantidad."""
+        try:
+            cliente = Cliente.objects.get(id=cliente_id)
+            producto = Producto.objects.get(id=producto_id)
+        except Cliente.DoesNotExist:
+            raise ValidationError("Cliente no encontrado")
+        except Producto.DoesNotExist:
+            raise ValidationError("Producto no encontrado")
+        
+        if cantidad <= 0:
+            raise ValidationError("Cantidad debe ser mayor a 0")
+        
+        # Verificar disponibilidad
+        if not InventarioService.verificar_disponibilidad(producto_id, cantidad):
+            raise ValidationError(f"Stock insuficiente para {producto.nombre}")
+        
+        carrito = CartService.obtener_o_crear_carrito(cliente_id)
+        
+        item, created = CarritoItem.objects.update_or_create(
+            carrito=carrito,
+            producto=producto,
+            defaults={'cantidad': cantidad}
+        )
+        return item
+    
+    @staticmethod
+    def eliminar_item(cliente_id, producto_id):
+        """Elimina un producto del carrito."""
+        try:
+            carrito = CartService.obtener_o_crear_carrito(cliente_id)
+            CarritoItem.objects.filter(carrito=carrito, producto_id=producto_id).delete()
+            return True
+        except ValidationError:
+            raise
+    
+    @staticmethod
+    def vaciar_carrito(cliente_id):
+        """Vacía todo el carrito del cliente."""
+        try:
+            carrito = CartService.obtener_o_crear_carrito(cliente_id)
+            CarritoItem.objects.filter(carrito=carrito).delete()
+            return True
+        except ValidationError:
+            raise
+    
+    @staticmethod
+    def obtener_carrito(cliente_id):
+        """Obtiene el carrito con todos sus items."""
+        carrito = CartService.obtener_o_crear_carrito(cliente_id)
+        return carrito
+    
+    @staticmethod
+    def calcular_total_carrito(cliente_id):
+        """Calcula el total del carrito."""
+        carrito = CartService.obtener_o_crear_carrito(cliente_id)
+        total = sum(
+            item.producto.precio * item.cantidad 
+            for item in carrito.items.all()
+        )
+        return float(total)
+    
+    @transaction.atomic
+    def crear_pedido_desde_carrito(self, cliente_id, metodo_pago, direccion_entrega):
+        """
+        Crea un pedido a partir del carrito y procesa pago y envío.
+        Delega responsabilidades a servicios inyectados (DIP).
+        
+        Args:
+            cliente_id: ID del cliente
+            metodo_pago: Método de pago
+            direccion_entrega: Dirección para el envío
+        
+        Returns:
+            dict con pedido, pago y envío
+        """
+        carrito = self.obtener_carrito(cliente_id)
+        
+        if not carrito.items.exists():
+            raise ValidationError("El carrito está vacío")
+        
+        # Convertir items del carrito a formato para crear pedido
+        productos_data = [
+            (item.producto_id, item.cantidad)
+            for item in carrito.items.all()
+        ]
+        
+        # Delegar a servicios inyectados (cumple DIP)
+        pedido = self.pedido_service.crear_pedido(cliente_id, productos_data)
+        pago = self.pago_service.procesear_pago(pedido.id, metodo_pago, pedido.total)
+        envio = self.envio_service.crear_envio(pedido.id, direccion_entrega)
+        
+        # Vaciar carrito
+        self.vaciar_carrito(cliente_id)
+        
+        return {
+            "pedido": pedido,
+            "pago": pago,
+            "envio": envio
+        }
