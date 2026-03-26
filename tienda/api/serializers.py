@@ -52,17 +52,42 @@ class PedidoSerializer(serializers.ModelSerializer):
 
     items = PedidoItemSerializer(many=True, read_only=True)
     cliente_id = serializers.SerializerMethodField(read_only=True)
+    usuario_id = serializers.SerializerMethodField(read_only=True)
+    usuario_username = serializers.SerializerMethodField(read_only=True)
+    usuario_email = serializers.SerializerMethodField(read_only=True)
     total = serializers.SerializerMethodField(read_only=True)
     fecha = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Pedido
-        fields = ["id", "cliente_id", "total", "estado", "fecha", "items"]
+        fields = [
+            "id",
+            "cliente_id",
+            "usuario_id",
+            "usuario_username",
+            "usuario_email",
+            "total",
+            "estado",
+            "fecha",
+            "items",
+        ]
         read_only_fields = ["id", "total", "fecha"]
     
     def get_cliente_id(self, obj):
         """Retorna el ID del cliente."""
         return obj.cliente.id if obj.cliente else None
+
+    def get_usuario_id(self, obj):
+        """Retorna el ID del usuario asociado."""
+        return obj.usuario.id if obj.usuario else None
+    
+    def get_usuario_username(self, obj):
+        """Retorna el username del usuario."""
+        return obj.usuario.username if obj.usuario else None
+    
+    def get_usuario_email(self, obj):
+        """Retorna el email del usuario."""
+        return obj.usuario.email if obj.usuario else None
     
     def get_total(self, obj):
         """Retorna el total como float."""

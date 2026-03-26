@@ -40,7 +40,7 @@ class PedidoService:
         self.notificador = NotificadorFactory.crear_notificador()
     
     @transaction.atomic
-    def crear_pedido(self, cliente_id, productos_data):
+    def crear_pedido(self, cliente_id, productos_data, usuario=None):
         """
         Crea un pedido con validación de stock y cálculo de total.
         
@@ -80,6 +80,9 @@ class PedidoService:
             InventarioService.reducir_stock(prod_id, cantidad)
         
         pedido = builder.build()
+        if usuario:
+            pedido.usuario = usuario
+            pedido.save(update_fields=["usuario"])
         
         # Calcular y establecer total
         self._calcular_total_pedido(pedido)
@@ -124,10 +127,11 @@ class PagoService:
     def procesear_pago(self, pedido_id, metodo_pago, monto):
         """
         Procesa el pago de un pedido usando la pasarela inyectada.
+        Utiliza estrategias de pago para cumplir con OCP.
         
         Args:
             pedido_id: ID del pedido
-            metodo_pago: Método de pago (Tarjeta de Crédito, PayPal, etc.)
+            metodo_pago: Método de pago (Tarjeta de Crédito, PayPal, Pago Adelantado, Contra Entrega, etc.)
             monto: Monto a procesar
         
         Returns:
@@ -136,6 +140,8 @@ class PagoService:
         Raises:
             ValidationError: Si el pedido no existe o hay conflicto
         """
+        from tienda.domain.strategies import PaymentStrategyFactory
+        
         try:
             pedido = Pedido.objects.get(id=pedido_id)
         except Pedido.DoesNotExist:
@@ -145,22 +151,33 @@ class PagoService:
         if monto != pedido.total:
             raise ValidationError(f"Monto incorrecto. Total esperado: {pedido.total}")
         
-        # Delegar procesamiento a la pasarela (cumple SRP y DIP)
+        # Delegar procesamiento a la pasarela
         resultado_pago = self.pasarela.procesar(monto, metodo_pago)
         
         if not resultado_pago.get('exito'):
             raise ValidationError(f"Error en pasarela: {resultado_pago.get('mensaje', 'Error desconocido')}")
+        
+        # Obtener estrategia de pago - Cumple con OCP
+        try:
+            estrategia_pago = PaymentStrategyFactory.get_strategy(metodo_pago)
+        except ValueError as e:
+            # Si no existe estrategia, usar comportamiento por defecto (Pendiente)
+            estrategia_pago = PaymentStrategyFactory.get_strategy("Contra Entrega")
+        
+        # Obtener estados desde la estrategia (sin if/elif hardcodeado)
+        estado_pago = estrategia_pago.get_payment_status()
+        estado_pedido = estrategia_pago.get_order_status()
         
         # Crear registro de pago en BD
         pago = Pago.objects.create(
             pedido=pedido,
             metodo_pago=metodo_pago,
             monto=monto,
-            estado="Pagado"
+            estado=estado_pago
         )
         
         # Actualizar estado del pedido
-        pedido.estado = "Pagado"
+        pedido.estado = estado_pedido
         pedido.save()
         
         return pago
@@ -295,7 +312,7 @@ class CartService:
         return float(total)
     
     @transaction.atomic
-    def crear_pedido_desde_carrito(self, cliente_id, metodo_pago, direccion_entrega):
+    def crear_pedido_desde_carrito(self, cliente_id, metodo_pago, direccion_entrega, usuario=None):
         """
         Crea un pedido a partir del carrito y procesa pago y envío.
         Delega responsabilidades a servicios inyectados (DIP).
@@ -320,7 +337,7 @@ class CartService:
         ]
         
         # Delegar a servicios inyectados (cumple DIP)
-        pedido = self.pedido_service.crear_pedido(cliente_id, productos_data)
+        pedido = self.pedido_service.crear_pedido(cliente_id, productos_data, usuario=usuario)
         pago = self.pago_service.procesear_pago(pedido.id, metodo_pago, pedido.total)
         envio = self.envio_service.crear_envio(pedido.id, direccion_entrega)
         

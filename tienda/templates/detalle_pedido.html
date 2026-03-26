@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --verde: #0f3d1f;
+        --beige: #ebe5d8;
+        --verde-oscuro: #0a2c16;
+        --beige-oscuro: #d4cbbe;
+        --gris-claro: #f8f6f2;
+        --texto-oscuro: #2a2a2a;
+        --texto-gris: #666666;
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, var(--gris-claro) 0%, #f5ede2 100%);
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .detail-header h1 {
+        font-family: 'Playfair Display', serif;
+        color: var(--verde);
+        font-size: 42px;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .detail-header .pedido-info {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .detail-header .info-item {
+        text-align: center;
+    }
+
+    .detail-header .info-label {
+        color: var(--texto-gris);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .detail-header .info-value {
+        color: var(--texto-oscuro);
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    .detail-header .info-value.total {
+        color: var(--verde);
+        font-size: 24px;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .detail-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(15, 61, 31, 0.08);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--verde);
+    }
+
+    .card-header i {
+        font-size: 28px;
+        color: var(--verde);
+    }
+
+    .card-header h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--verde);
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e8dfd3;
+        font-size: 14px;
+    }
+
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .detail-item.important {
+        background: var(--gris-claro);
+        padding: 12px 16px;
+        margin: 12px -30px 12px -30px;
+        padding-left: 30px;
+        padding-right: 30px;
+        font-weight: 600;
+        border: none;
+    }
+
+    .detail-label {
+        color: var(--texto-gris);
+        font-weight: 500;
+    }
+
+    .detail-value {
+        color: var(--texto-oscuro);
+        font-weight: 600;
+    }
+
+    .detail-value.success {
+        color: #155724;
+        background: #d4edda;
+        padding: 6px 12px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .detail-value.warning {
+        color: #856404;
+        background: #fff3cd;
+        padding: 6px 12px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .estado-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .estado-pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .estado-pagado {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .estado-completado {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .estado-cancelado {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .items-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .items-list li {
+        padding: 16px;
+        background: var(--gris-claro);
+        border-radius: 6px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .items-list li:last-child {
+        margin-bottom: 0;
+    }
+
+    .item-info h4 {
+        color: var(--texto-oscuro);
+        font-weight: 600;
+        margin: 0 0 6px 0;
+        font-size: 14px;
+    }
+
+    .item-info p {
+        color: var(--texto-gris);
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .item-price {
+        text-align: right;
+    }
+
+    .item-unit-price {
+        color: var(--texto-gris);
+        font-size: 12px;
+    }
+
+    .item-total {
+        color: var(--verde);
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .btn-volver {
+        background: var(--verde);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 40px;
+    }
+
+    .btn-volver:hover {
+        background: var(--verde-oscuro);
+        transform: translateY(-2px);
+    }
+
+    .invoice-section {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(15, 61, 31, 0.08);
+        margin-bottom: 40px;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--verde);
+    }
+
+    .invoice-title h1 {
+        font-family: 'Playfair Display', serif;
+        color: var(--verde);
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .invoice-title p {
+        color: var(--texto-gris);
+        margin: 5px 0 0 0;
+        font-size: 12px;
+    }
+
+    .invoice-status {
+        text-align: right;
+    }
+
+    .print-button {
+        background: var(--verde);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 30px;
+    }
+
+    .print-button:hover {
+        background: var(--verde-oscuro);
+    }
+
+    @media print {
+        .btn-volver, .print-button, .card-header {
+            display: none;
+        }
+        body {
+            background: white;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-header h1 {
+            font-size: 28px;
+        }
+
+        .detail-header .pedido-info {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .items-list li {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .item-price {
+            text-align: left;
+            margin-top: 10px;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container" style="padding: 40px 20px; max-width: 1200px;">
+    <a href="{% if request.user.is_superuser %}{% url 'gestionar_pedidos' %}{% else %}{% url 'mis_pedidos' %}{% endif %}" class="btn-volver">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+
+    <button class="print-button" onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimir
+    </button>
+
+    <!-- HEADER CON INFORMACIÓN RÁPIDA -->
+    <div class="detail-header">
+        <h1><i class="fas fa-box"></i> Pedido #{{ pedido.id }}</h1>
+        <div class="pedido-info">
+            <div class="info-item">
+                <div class="info-label">Fecha</div>
+                <div class="info-value">{{ pedido.fecha|date:"d/m/Y H:i" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Estado</div>
+                <div class="info-value">
+                    <span class="estado-badge estado-{{ pedido.estado|lower }}">
+                        {% if pedido.estado == "Pendiente" %}
+                            <i class="fas fa-hourglass-half"></i> Pendiente
+                        {% elif pedido.estado == "Pagado" %}
+                            <i class="fas fa-check"></i> Pagado
+                        {% elif pedido.estado == "Completado" %}
+                            <i class="fas fa-check-double"></i> Completado
+                        {% elif pedido.estado == "Cancelado" %}
+                            <i class="fas fa-times"></i> Cancelado
+                        {% else %}
+                            {{ pedido.estado }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Total</div>
+                <div class="info-value total">${{ pedido.total|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRID DE DETALLES -->
+    <div class="detail-grid">
+        <!-- CLIENTE -->
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-user"></i>
+                <h2>Cliente</h2>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Nombre</span>
+                <span class="detail-value">{{ pedido.cliente.nombre }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">{{ pedido.cliente.email }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Teléfono</span>
+                <span class="detail-value">{{ pedido.cliente.telefono }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Dirección</span>
+                <span class="detail-value">{{ pedido.cliente.direccion }}</span>
+            </div>
+        </div>
+
+        <!-- USUARIO (si existe) -->
+        {% if pedido.usuario %}
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-user-check"></i>
+                <h2>Usuario</h2>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Nombre</span>
+                <span class="detail-value">{{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Username</span>
+                <span class="detail-value">{{ pedido.usuario.username }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">{{ pedido.usuario.email }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PAGO -->
+        {% if pago %}
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-credit-card"></i>
+                <h2>Pago</h2>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">ID Pago</span>
+                <span class="detail-value">#{{ pago.id }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Método</span>
+                <span class="detail-value">{{ pago.metodo_pago }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Monto</span>
+                <span class="detail-value">${{ pago.monto|floatformat:2 }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Estado</span>
+                <span class="detail-value {% if pago.estado == 'Pagado' %}success{% elif pago.estado == 'Pendiente' %}warning{% endif %}">
+                    {% if pago.estado == 'Pagado' %}
+                        <i class="fas fa-check-circle"></i> Pagado
+                    {% elif pago.estado == 'Pendiente' %}
+                        <i class="fas fa-hourglass-half"></i> Pendiente
+                    {% else %}
+                        {{ pago.estado }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ENVÍO -->
+        {% if envio %}
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-truck"></i>
+                <h2>Envío</h2>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">ID Envío</span>
+                <span class="detail-value">#{{ envio.id }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Dirección</span>
+                <span class="detail-value">{{ envio.direccion_entrega }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Estado</span>
+                <span class="detail-value {% if envio.estado_envio == 'Entregado' %}success{% else %}warning{% endif %}">
+                    {{ envio.estado_envio }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ITEMS DEL PEDIDO -->
+    <div class="detail-card">
+        <div class="card-header">
+            <i class="fas fa-list"></i>
+            <h2>Artículos ({{ pedido.items.count }})</h2>
+        </div>
+        
+        {% if pedido.items.all %}
+        <ul class="items-list">
+            {% for item in pedido.items.all %}
+            <li>
+                <div class="item-info">
+                    <h4>{{ item.producto.nombre }}</h4>
+                    <p><strong>Categoría:</strong> {{ item.producto.categoria }}</p>
+                    <p><strong>Cantidad:</strong> {{ item.cantidad }}</p>
+                </div>
+                <div class="item-price">
+                    <div class="item-unit-price">${{ item.producto.precio|floatformat:2 }} c/u</div>
+                    <div class="item-total">${{ item.get_subtotal|floatformat:2 }}</div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--verde); display: flex; justify-content: flex-end;">
+            <div style="text-align: right;">
+                <div style="color: var(--texto-gris); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total del Pedido</div>
+                <div style="color: var(--verde); font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700;">${{ pedido.total|floatformat:2 }}</div>
+            </div>
+        </div>
+        {% else %}
+        <p style="color: var(--texto-gris); text-align: center; padding: 20px;">No hay items en este pedido</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Custom filter para multiplicar en template (si no está disponible)
+    if (!window.templates) {
+        window.templates = {};
+    }
+</script>
+
+{% endblock %}

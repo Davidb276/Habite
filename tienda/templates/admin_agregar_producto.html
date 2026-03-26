@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Producto - HABITÉ</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --verde: #0f3d1f;
+            --beige: #ebe5d8;
+            --verde-oscuro: #0a2c16;
+            --beige-oscuro: #d4cbbe;
+            --gris-claro: #f8f6f2;
+            --texto-oscuro: #2a2a2a;
+            --texto-gris: #666666;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--beige) 0%, #f0e9e0 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--texto-oscuro);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 12px 24px rgba(15, 61, 31, 0.15);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .form-icon {
+            font-size: 48px;
+            color: var(--verde);
+            margin-bottom: 16px;
+        }
+
+        .form-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--verde);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .form-subtitle {
+            color: var(--texto-gris);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--texto-oscuro);
+            margin-bottom: 8px;
+            display: block;
+            font-size: 14px;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--beige-oscuro);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--verde);
+            box-shadow: 0 0 0 3px rgba(15, 61, 31, 0.1);
+            outline: none;
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--verde);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 16px;
+        }
+
+        .btn-submit:hover {
+            background: var(--verde-oscuro);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(15, 61, 31, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-cancel {
+            width: 100%;
+            background: var(--beige-oscuro);
+            color: var(--texto-oscuro);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-cancel:hover {
+            background: var(--beige);
+            color: var(--texto-oscuro);
+            text-decoration: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .error-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .error-list li {
+            margin-bottom: 6px;
+        }
+
+        .file-input-label {
+            display: block;
+            position: relative;
+            cursor: pointer;
+            border: 2px dashed var(--beige-oscuro);
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            background: var(--gris-claro);
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            border-color: var(--verde);
+            background: #f0ebe0;
+        }
+
+        .file-input-label input[type="file"] {
+            display: none;
+        }
+
+        .file-input-text {
+            color: var(--texto-gris);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .file-input-icon {
+            font-size: 32px;
+            color: var(--texto-gris);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 30px 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <i class="fas fa-plus-circle form-icon"></i>
+            <h1 class="form-title">Agregar Producto</h1>
+            <p class="form-subtitle">Panel de administración</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="success-message">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="error-message">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Nombre -->
+            <div class="form-group">
+                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                    <i class="fas fa-tag" style="color: var(--verde); margin-right: 6px;"></i>
+                    Nombre del Producto
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <div class="error-message" style="margin-top: 8px;">
+                        {% for error in form.nombre.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Precio y Categoría -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.precio.id_for_label }}" class="form-label">
+                        <i class="fas fa-dollar-sign" style="color: var(--verde); margin-right: 6px;"></i>
+                        Precio
+                    </label>
+                    {{ form.precio }}
+                    {% if form.precio.errors %}
+                        <div class="error-message" style="margin-top: 8px;">
+                            {% for error in form.precio.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.categoria.id_for_label }}" class="form-label">
+                        <i class="fas fa-list" style="color: var(--verde); margin-right: 6px;"></i>
+                        Categoría
+                    </label>
+                    {{ form.categoria }}
+                    {% if form.categoria.errors %}
+                        <div class="error-message" style="margin-top: 8px;">
+                            {% for error in form.categoria.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Descripción -->
+            <div class="form-group">
+                <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                    <i class="fas fa-align-left" style="color: var(--verde); margin-right: 6px;"></i>
+                    Descripción
+                </label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="error-message" style="margin-top: 8px;">
+                        {% for error in form.descripcion.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Imagen -->
+            <div class="form-group">
+                <label for="{{ form.imagen.id_for_label }}" class="form-label">
+                    <i class="fas fa-image" style="color: var(--verde); margin-right: 6px;"></i>
+                    Imagen del Producto
+                </label>
+                <label class="file-input-label">
+                    <i class="fas fa-cloud-upload-alt file-input-icon"></i>
+                    <p class="file-input-text">Arrastra una imagen o haz clic para seleccionar</p>
+                    {{ form.imagen }}
+                </label>
+                {% if form.imagen.errors %}
+                    <div class="error-message" style="margin-top: 8px;">
+                        {% for error in form.imagen.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Botones -->
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                Agregar Producto
+            </button>
+            <a href="{% url 'catalogo' %}" class="btn-cancel">
+                <i class="fas fa-times-circle" style="margin-right: 8px;"></i>
+                Cancelar
+            </a>
+        </form>
+    </div>
+
+    <script>
+        // Mejorar experiencia del upload de archivo
+        const fileInput = document.querySelector('input[type="file"]');
+        const fileLabel = document.querySelector('.file-input-label');
+
+        if (fileInput && fileLabel) {
+            // Cambiar color cuando se arrastra el archivo encima
+            fileLabel.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileLabel.style.borderColor = 'var(--verde)';
+                fileLabel.style.background = '#f0ebe0';
+            });
+
+            fileLabel.addEventListener('dragleave', () => {
+                fileLabel.style.borderColor = 'var(--beige-oscuro)';
+                fileLabel.style.background = 'var(--gris-claro)';
+            });
+
+            // Manejar archivo soltado
+            fileLabel.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileInput.files = e.dataTransfer.files;
+                updateFileName();
+            });
+
+            // Actualizar nombre del archivo cuando se selecciona
+            fileInput.addEventListener('change', updateFileName);
+
+            function updateFileName() {
+                if (fileInput.files.length > 0) {
+                    const fileName = fileInput.files[0].name;
+                    fileLabel.querySelector('.file-input-text').textContent = `✓ ${fileName}`;
+                    fileLabel.style.borderColor = 'var(--verde)';
+                    fileLabel.style.background = '#e8f5e9';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

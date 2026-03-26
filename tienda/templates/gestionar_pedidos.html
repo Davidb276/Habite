@@ -1,0 +1,688 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --verde: #0f3d1f;
+        --beige: #ebe5d8;
+        --verde-oscuro: #0a2c16;
+        --beige-oscuro: #d4cbbe;
+        --gris-claro: #f8f6f2;
+        --texto-oscuro: #2a2a2a;
+        --texto-gris: #666666;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 50px;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, var(--gris-claro) 0%, #f5ede2 100%);
+        border-radius: 12px;
+    }
+
+    .page-header h1 {
+        font-family: 'Playfair Display', serif;
+        color: var(--verde);
+        font-size: 48px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .page-header p {
+        color: var(--texto-gris);
+        font-size: 16px;
+    }
+
+    .admin-controls {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(15, 61, 31, 0.08);
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .filter-group label {
+        color: var(--texto-oscuro);
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid var(--beige-oscuro);
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .filter-group select:focus {
+        border-color: var(--verde);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 61, 31, 0.1);
+    }
+
+    .pedidos-table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(15, 61, 31, 0.08);
+        overflow: hidden;
+    }
+
+    .pedidos-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .pedidos-table thead {
+        background: var(--gris-claro);
+        border-bottom: 2px solid var(--beige-oscuro);
+    }
+
+    .pedidos-table th {
+        padding: 16px;
+        text-align: left;
+        color: var(--texto-oscuro);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .pedidos-table td {
+        padding: 16px;
+        border-bottom: 1px solid #e8dfd3;
+        color: var(--texto-oscuro);
+    }
+
+    .pedidos-table tbody tr:hover {
+        background: var(--gris-claro);
+    }
+
+    .pedido-id {
+        font-weight: 700;
+        color: var(--verde);
+        font-size: 14px;
+    }
+
+    .cliente-nombre {
+        font-weight: 600;
+    }
+
+    .cliente-email {
+        color: var(--texto-gris);
+        font-size: 12px;
+    }
+
+    .pedido-total {
+        color: var(--verde);
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .estado-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .estado-pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .estado-pagado {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .estado-completado {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .estado-cancelado {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .estado-select {
+        padding: 6px 8px;
+        border: 1px solid var(--beige-oscuro);
+        border-radius: 4px;
+        font-size: 12px;
+        background: white;
+        cursor: pointer;
+        color: var(--texto-oscuro);
+        font-weight: 500;
+    }
+
+    .estado-select:focus {
+        border-color: var(--verde);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(15, 61, 31, 0.1);
+    }
+
+    .btn-cambiar-estado {
+        background: var(--verde);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-left: 4px;
+        text-decoration: none;
+    }
+
+    .btn-cambiar-estado:hover {
+        background: var(--verde-oscuro);
+    }
+
+    .btn-ver-detalles {
+        background: var(--texto-gris);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-ver-detalles:hover {
+        background: var(--texto-oscuro);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--texto-gris);
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: var(--beige-oscuro);
+        margin-bottom: 20px;
+    }
+
+    .empty-state h2 {
+        color: var(--texto-gris);
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--verde);
+    }
+
+    .modal-title {
+        font-family: 'Playfair Display', serif;
+        color: var(--verde);
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        margin-left: 12px;
+    }
+
+    .modal-body {
+        margin-bottom: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--texto-oscuro);
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--beige-oscuro);
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .form-group select:focus {
+        border-color: var(--verde);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 61, 31, 0.1);
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .btn-modal {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 12px;
+    }
+
+    .btn-modal-primary {
+        background: var(--verde);
+        color: white;
+    }
+
+    .btn-modal-primary:hover {
+        background: var(--verde-oscuro);
+    }
+
+    .btn-modal-secondary {
+        background: var(--beige-oscuro);
+        color: var(--texto-oscuro);
+    }
+
+    .btn-modal-secondary:hover {
+        background: var(--beige);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(40px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 32px;
+        }
+
+        .admin-controls {
+            flex-direction: column;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .pedidos-table {
+            font-size: 12px;
+        }
+
+        .pedidos-table th,
+        .pedidos-table td {
+            padding: 10px;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <h1><i class="fas fa-clipboard-list"></i> Gestión de Pedidos</h1>
+    <p>Administra los pedidos de tus clientes</p>
+</div>
+
+<div class="container" style="margin-bottom: 60px;">
+    <div class="admin-controls">
+        <div class="filter-group">
+            <label for="filtro-estado">Filtrar por estado:</label>
+            <select id="filtro-estado" onchange="filtrarPorEstado(this.value)">
+                <option value="">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Pagado">Pagado</option>
+                <option value="Completado">Completado</option>
+                <option value="Cancelado">Cancelado</option>
+            </select>
+        </div>
+    </div>
+
+    {% if pedidos %}
+        <div class="pedidos-table-container">
+            <table class="pedidos-table">
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                        <tr>
+                            <td class="pedido-id">#{{ pedido.id }}</td>
+                            <td>
+                                <div class="cliente-nombre">{{ pedido.cliente.nombre }}</div>
+                                <div class="cliente-email">{{ pedido.cliente.email }}</div>
+                            </td>
+                            <td>
+                                {% if pedido.usuario %}
+                                    <div class="cliente-nombre">{{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</div>
+                                    <div class="cliente-email">{{ pedido.usuario.email }}</div>
+                                {% else %}
+                                    <div class="cliente-email">Sin usuario</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ pedido.fecha|date:"d/m/Y" }}</td>
+                            <td>
+                                <span style="background: var(--gris-claro); padding: 4px 8px; border-radius: 4px; font-weight: 600; color: var(--verde);">
+                                    {{ pedido.items.count }}
+                                </span>
+                            </td>
+                            <td class="pedido-total">${{ pedido.total|floatformat:2 }}</td>
+                            <td>
+                                <span class="estado-badge estado-{{ pedido.estado|lower }}">
+                                    {% if pedido.estado == "Pendiente" %}
+                                        <i class="fas fa-hourglass-half"></i> Pendiente
+                                    {% elif pedido.estado == "Pagado" %}
+                                        <i class="fas fa-check"></i> Pagado
+                                    {% elif pedido.estado == "Completado" %}
+                                        <i class="fas fa-check-double"></i> Completado
+                                    {% elif pedido.estado == "Cancelado" %}
+                                        <i class="fas fa-times"></i> Cancelado
+                                    {% else %}
+                                        {{ pedido.estado }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'detalle_pedido_admin' pedido.id %}" class="btn-ver-detalles">
+                                    <i class="fas fa-eye"></i> Detalles
+                                </a>
+                                <button class="btn-cambiar-estado" onclick="abrirModalCambiarEstado({{ pedido.id }}, '{{ pedido.estado }}', {{ pedido.envio.id|default:'null' }}, '{{ pedido.envio.estado_envio|default:'' }}')">
+                                    <i class="fas fa-edit"></i> Cambiar
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+            <nav style="margin-top: 40px; text-align: center;">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="btn btn-outline-secondary" style="margin: 0 5px;">« Primera</a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-secondary" style="margin: 0 5px;">‹ Anterior</a>
+                {% endif %}
+
+                <span style="margin: 0 10px; color: var(--texto-gris);">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-secondary" style="margin: 0 5px;">Siguiente ›</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline-secondary" style="margin: 0 5px;">Última »</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="pedidos-table-container">
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h2>No hay pedidos</h2>
+                <p>Aún no tienes pedidos para gestionar</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- MODAL CAMBIAR ESTADO -->
+<div id="modalCambiarEstado" class="modal-overlay" style="display: none;" onclick="if(event.target.id === 'modalCambiarEstado') cerrarModalCambiarEstado()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <i class="fas fa-edit" style="font-size: 28px; color: var(--verde);"></i>
+            <h2 class="modal-title">Cambiar Estado</h2>
+        </div>
+
+        <div class="modal-body">
+            <p style="color: var(--texto-gris); margin-bottom: 16px;">
+                Pedido <strong id="modalPedidoId">#123</strong>
+            </p>
+            <div class="form-group">
+                <label for="nuevoEstado">Estado del Pedido:</label>
+                <select id="nuevoEstado">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pagado">Pagado</option>
+                    <option value="Completado">Completado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+            <div class="form-group" id="envioGroup" style="display: none;">
+                <label for="nuevoEstadoEnvio">Estado del Envío:</label>
+                <select id="nuevoEstadoEnvio">
+                    <option value="Preparando">Preparando</option>
+                    <option value="En camino">En camino</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-modal btn-modal-secondary" onclick="cerrarModalCambiarEstado()">
+                Cancelar
+            </button>
+            <button class="btn-modal btn-modal-primary" onclick="guardarCambioEstado()">
+                Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let estadoModalPedidoId = null;
+    let estadoModalEnvioId = null;
+
+    function abrirModalCambiarEstado(pedidoId, estadoActual, envioId, estadoEnvio) {
+        estadoModalPedidoId = pedidoId;
+        estadoModalEnvioId = envioId;
+        document.getElementById('modalPedidoId').textContent = '#' + pedidoId;
+        document.getElementById('nuevoEstado').value = estadoActual;
+        
+        // Si existe envío, mostrar el campo de envío
+        const envioGroup = document.getElementById('envioGroup');
+        if (envioId && envioId !== null) {
+            envioGroup.style.display = 'block';
+            document.getElementById('nuevoEstadoEnvio').value = estadoEnvio;
+        } else {
+            envioGroup.style.display = 'none';
+        }
+        
+        document.getElementById('modalCambiarEstado').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalCambiarEstado() {
+        document.getElementById('modalCambiarEstado').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function guardarCambioEstado() {
+        const nuevoEstado = document.getElementById('nuevoEstado').value;
+        const nuevoEstadoEnvio = document.getElementById('nuevoEstadoEnvio').value;
+        const btn = event.target;
+        const btnText = btn.textContent;
+        
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        // Primero, guardar cambio de estado del pedido
+        fetch(`/api/pedidos/${estadoModalPedidoId}/cambiar-estado/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') || ''
+            },
+            body: JSON.stringify({ estado: nuevoEstado })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.mensaje) {
+                // Si existe envío, guardar también su estado
+                if (estadoModalEnvioId && estadoModalEnvioId !== null) {
+                    return fetch(`/api/envios/${estadoModalEnvioId}/actualizar/`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken') || ''
+                        },
+                        body: JSON.stringify({ nuevo_estado: nuevoEstadoEnvio })
+                    });
+                }
+                return Promise.resolve();
+            } else {
+                throw new Error(data.error || 'Error desconocido');
+            }
+        })
+        .then(response => {
+            if (response && response.ok) {
+                return response.json();
+            }
+            return Promise.resolve();
+        })
+        .then(data => {
+            mostrarMensaje('✓ Estados actualizados exitosamente', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        })
+        .catch(error => {
+            mostrarMensaje('❌ Error: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = btnText;
+        });
+    }
+
+    function filtrarPorEstado(estado) {
+        const url = new URL(window.location);
+        if (estado) {
+            url.searchParams.set('estado', estado);
+        } else {
+            url.searchParams.delete('estado');
+        }
+        window.location = url;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === name + '=') {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function mostrarMensaje(mensaje, tipo) {
+        const div = document.createElement('div');
+        div.className = 'alert-message alert-' + (tipo === 'success' ? 'success' : 'error');
+        div.textContent = mensaje;
+        div.style.position = 'fixed';
+        div.style.top = '80px';
+        div.style.right = '20px';
+        div.style.padding = '16px 20px';
+        div.style.borderRadius = '8px';
+        div.style.maxWidth = '400px';
+        div.style.zIndex = '2000';
+        div.style.animation = 'slideIn 0.3s ease-out';
+        
+        if (tipo === 'success') {
+            div.style.background = '#d4edda';
+            div.style.color = '#155724';
+            div.style.border = '1px solid #c3e6cb';
+        } else {
+            div.style.background = '#f8d7da';
+            div.style.color = '#721c24';
+            div.style.border = '1px solid #f5c6cb';
+        }
+        
+        document.body.appendChild(div);
+
+        setTimeout(() => {
+            div.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => div.remove(), 300);
+        }, 3000);
+    }
+</script>
+
+{% endblock %}

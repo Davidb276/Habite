@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HABITÉ | Premium para el Hogar{% endblock %}</title>
+    {% csrf_token %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --verde: #0f3d1f;
+            --beige: #ebe5d8;
+            --verde-oscuro: #0a2c16;
+            --beige-oscuro: #d4cbbe;
+            --gris-claro: #f8f6f2;
+            --texto-oscuro: #2a2a2a;
+            --texto-gris: #666666;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 8px rgba(15, 61, 31, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            color: var(--verde) !important;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 40px 20px;
+        }
+
+        /* SIDEBAR MENU */
+        .sidebar-menu {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            z-index: 2000;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 8px rgba(15, 61, 31, 0.12);
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-menu.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 2px solid var(--beige);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--verde);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--texto-gris);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .sidebar-close:hover {
+            color: var(--verde);
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--texto-oscuro);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover {
+            background: var(--gris-claro);
+            border-left-color: var(--verde);
+            color: var(--verde);
+        }
+
+        .sidebar-menu a.active {
+            background: var(--gris-claro);
+            border-left-color: var(--verde);
+            color: var(--verde);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--beige-oscuro);
+            margin: 20px 0;
+        }
+
+        .sidebar-logout {
+            color: #d32f2f !important;
+        }
+
+        .sidebar-logout:hover {
+            background: rgba(211, 47, 47, 0.1) !important;
+        }
+
+        /* OVERLAY */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body style="background: linear-gradient(135deg, #ebe5d8 0%, #f0e9e0 100%); font-family: 'Inter', sans-serif; color: #2a2a2a; min-height: 100vh; display: flex; flex-direction: column;">
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <button 
+                class="btn btn-link"
+                onclick="abrirSidebar()"
+                style="background: none; border: none; color: var(--verde); font-size: 24px; margin-right: 10px; padding: 0;"
+            >
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand" href="{% url 'catalogo' %}">
+                <i class="fas fa-leaf"></i> HABITÉ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'catalogo' %}">
+                            <i class="fas fa-store"></i> Catálogo
+                        </a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        {% if request.user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'gestionar_pedidos' %}">
+                                    <i class="fas fa-clipboard-list"></i> Gestión Pedidos
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'mis_pedidos' %}">
+                                    <i class="fas fa-box"></i> Mis Pedidos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'perfil' %}">
+                                    <i class="fas fa-user-edit"></i> Perfil
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="abrirCarrito(); return false;" style="cursor: pointer;">
+                                <i class="fas fa-shopping-cart"></i> Carrito
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt"></i> Salir
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="fas fa-sign-in-alt"></i> Ingresar
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main style="flex: 1; padding: 40px 20px;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-4" style="background: #0a2c16; color: white; text-align: center; padding: 20px;">
+        <p class="mb-0">&copy; 2026 <strong>HABITÉ</strong> - Artículos Premium para el Hogar</p>
+    </footer>
+
+    <!-- SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="cerrarSidebar()"></div>
+
+    <!-- SIDEBAR MENU -->
+    <div class="sidebar-menu" id="sidebarMenu">
+        <div class="sidebar-header">
+            <span class="sidebar-title">HABITÉ</span>
+            <button class="sidebar-close" onclick="cerrarSidebar()">✕</button>
+        </div>
+        
+        <a href="{% url 'catalogo' %}">
+            <i class="fas fa-store"></i> Catálogo
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        {% if request.user.is_authenticated %}
+            {% if request.user.is_superuser %}
+                <!-- MENU ADMIN -->
+                <a href="{% url 'gestionar_pedidos' %}">
+                    <i class="fas fa-clipboard-list"></i> Gestión Pedidos
+                </a>
+            {% else %}
+                <!-- MENU USUARIO NORMAL -->
+                <a href="{% url 'mis_pedidos' %}">
+                    <i class="fas fa-box"></i> Mis Pedidos
+                </a>
+                <a href="{% url 'perfil' %}">
+                    <i class="fas fa-user-edit"></i> Mi Perfil
+                </a>
+            {% endif %}
+            <a href="{% url 'logout' %}" class="sidebar-logout">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </a>
+        {% else %}
+            <a href="{% url 'login' %}">
+                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- MODAL CARRITO -->
+    <div class="modal fade" id="modalCarrito" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shopping-cart"></i> Mi Carrito
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="carritoContent">
+                    <p class="text-center text-muted">Cargando carrito...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+    <script>
+        // Funciones del sidebar
+        function abrirSidebar() {
+            document.getElementById('sidebarMenu').classList.add('active');
+            document.getElementById('sidebarOverlay').style.display = 'block';
+        }
+
+        function cerrarSidebar() {
+            document.getElementById('sidebarMenu').classList.remove('active');
+            document.getElementById('sidebarOverlay').style.display = 'none';
+        }
+
+        // Cliente actual (se carga al iniciar la página)
+        let clienteActual = { id: null };
+        let pedido = [];
+
+        // Cargar cliente cuando la página carga
+        function cargarClienteUsuario() {
+            if (!clienteActual.id) {
+                fetch("/api/mi-cliente/")
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error("Error cargando cliente:", response.status);
+                            return null;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.cliente && data.cliente.id) {
+                            clienteActual.id = data.cliente.id;
+                            console.log("Cliente cargado:", clienteActual.id);
+                        } else {
+                            console.warn("No se pudo cargar cliente");
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error al cargar cliente:", err);
+                    });
+            }
+        }
+
+        // Cargar cliente cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarClienteUsuario();
+        });
+
+        // Funciones auxiliares globales
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            const div = document.createElement('div');
+            div.className = 'alert-message ' + (tipo === 'success' ? 'alert-success' : 'alert-error');
+            div.textContent = mensaje;
+            div.style.position = 'fixed';
+            div.style.top = '80px';
+            div.style.right = '20px';
+            div.style.padding = '16px 20px';
+            div.style.borderRadius = '8px';
+            div.style.maxWidth = '400px';
+            div.style.zIndex = '2000';
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        function crearPedidoConPago() {
+            if (!clienteActual.id) {
+                mostrarMensaje("Debes iniciar sesión para comprar", "error");
+                return;
+            }
+
+            const payload = {
+                cliente_id: clienteActual.id,
+                metodo_pago: "Pago Adelantado",
+                direccion_entrega: "Por definir"
+            };
+
+            fetch("/api/carrito/checkout/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken') || ''
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.compra && data.compra.pedido) {
+                    pedido = [];
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalCarrito'));
+                    if (modal) modal.hide();
+                    // Actualizar carrito
+                    cargarCarrito();
+                    mostrarMensaje("✓ Pago realizado exitosamente", "success");
+                } else {
+                    mostrarMensaje("❌ " + (data.error || "No se pudo procesar"), "error");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                mostrarMensaje("❌ Error: " + error.message, "error");
+            });
+        }
+
+        function crearPedidoContraEntrega() {
+            if (!clienteActual.id) {
+                mostrarMensaje("Debes iniciar sesión para comprar", "error");
+                return;
+            }
+
+            const payload = {
+                cliente_id: clienteActual.id,
+                metodo_pago: "Contra Entrega",
+                direccion_entrega: "Por definir"
+            };
+
+            fetch("/api/carrito/checkout/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken') || ''
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.compra && data.compra.pedido) {
+                    pedido = [];
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalCarrito'));
+                    if (modal) modal.hide();
+                    // Actualizar carrito
+                    cargarCarrito();
+                    mostrarMensaje("✓ Pedido creado. Pago pendiente contra entrega", "success");
+                } else {
+                    mostrarMensaje("❌ " + (data.error || "No se pudo procesar"), "error");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                mostrarMensaje("❌ Error: " + error.message, "error");
+            });
+        }
+
+        function crearPedido() {
+            if (!clienteActual.id) {
+                mostrarMensaje("Debes iniciar sesión para comprar", "error");
+                return;
+            }
+
+            const payload = {
+                cliente_id: clienteActual.id,
+                metodo_pago: "Tarjeta de Crédito",
+                direccion_entrega: "Por definir"
+            };
+
+            fetch("/api/carrito/checkout/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken') || ''
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.compra && data.compra.pedido) {
+                    pedido = [];
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalCarrito'));
+                    if (modal) modal.hide();
+                    // Actualizar carrito
+                    cargarCarrito();
+                    mostrarMensaje("✓ Compra procesada exitosamente", "success");
+                } else {
+                    mostrarMensaje("❌ " + (data.error || "No se pudo procesar"), "error");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                mostrarMensaje("❌ Error: " + error.message, "error");
+            });
+        }
+
+        function abrirCarrito() {
+            if (!clienteActual.id) {
+                mostrarMensaje('Cargando datos del usuario...', 'error');
+                return;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('modalCarrito'));
+            modal.show();
+            cargarCarrito();
+        }
+
+        function cargarCarrito() {
+            if (!clienteActual.id) {
+                console.warn('Cliente no disponible para cargar carrito');
+                return;
+            }
+
+            fetch('/api/carrito/' + clienteActual.id + '/')
+                .then(response => response.json())
+                .then(data => {
+                    const content = document.getElementById('carritoContent');
+                    if (data.items && data.items.length > 0) {
+                        let html = '<div class="carrito-items">';
+                        data.items.forEach(item => {
+                            html += `
+                                <div class="carrito-item" style="padding: 12px; background: #f8f6f2; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h6 style="margin: 0; color: #2a2a2a;">${item.producto_nombre}</h6>
+                                        <p style="margin: 4px 0 0 0; color: #666; font-size: 12px;">$${item.precio_unitario} x ${item.cantidad}</p>
+                                    </div>
+                                    <div style="color: #0f3d1f; font-weight: 700;">$${item.subtotal.toFixed(2)}</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        html += `
+                            <div class="carrito-total" style="margin-top: 16px; border-top: 1px solid #e8dfd3; padding-top: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                                    <strong style="color: #666;">Total:</strong>
+                                    <strong style="color: #0f3d1f; font-size: 20px;">$${data.total}</strong>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn btn-success" onclick="crearPedidoConPago()" style="flex: 1; font-weight: 600; padding: 10px;">
+                                        <i class="fas fa-credit-card"></i> Pagar Ahora
+                                    </button>
+                                    <button class="btn btn-warning" onclick="crearPedidoContraEntrega()" style="flex: 1; font-weight: 600; padding: 10px;">
+                                        <i class="fas fa-truck"></i> Contra Entrega
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        content.innerHTML = html;
+                    } else {
+                        content.innerHTML = '<p class="text-center text-muted">Tu carrito está vacío</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando carrito:', error);
+                    document.getElementById('carritoContent').innerHTML = '<p class="text-center text-danger">Error al cargar el carrito</p>';
+                });
+        }
+
+        function actualizarContadorCarrito(cantidad) {
+            const cartCount = document.getElementById('cart-count-nav');
+            if (cartCount) {
+                cartCount.textContent = cantidad;
+            }
+        }
+    </script>
+</body>
+</html>

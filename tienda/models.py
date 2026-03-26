@@ -1,5 +1,5 @@
 from django.db import models
-from django.db import models
+from django.contrib.auth.models import User
 
 # ===================== CLIENTE =====================
 class Cliente(models.Model):
@@ -18,6 +18,7 @@ class Producto(models.Model):
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     categoria = models.CharField(max_length=100)
     descripcion = models.TextField()
+    imagen = models.ImageField(upload_to='productos/', null=True, blank=True)
     es_premium = models.BooleanField(default=True)
 
     def __str__(self):
@@ -57,6 +58,7 @@ class CarritoItem(models.Model):
 
 # ===================== PEDIDO =====================
 class Pedido(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pedidos", null=True, blank=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -69,6 +71,13 @@ class PedidoItem(models.Model):
     pedido = models.ForeignKey(Pedido, related_name="items", on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.cantidad}x {self.producto.nombre} en pedido #{self.pedido.id}"
+
+    def get_subtotal(self):
+        """Calcula el subtotal del item"""
+        return self.producto.precio * self.cantidad
 
 # ===================== PAGO =====================
 class Pago(models.Model):

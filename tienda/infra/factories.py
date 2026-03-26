@@ -145,36 +145,56 @@ class PasarelaPayPal(Pasarela):
 
 
 class PasarelaFactory:
-    """
-    Factory Pattern para pasarelas de pago.
+    """Factory Pattern para pasarelas de pago.
     
-    Permite cambiar entre diferentes proveedores sin modificar
-    el código de negocio (cumple DIP y Open/Closed).
+    Implementa registro dinámico de pasarelas para cumplir con OCP.
+    Nuevas pasarelas pueden agregarse sin modificar este código.
     """
     
-    @staticmethod
-    def crear_pasarela(proveedor=None) -> Pasarela:
-        """
-        Crea la instancia apropiada de pasarela según configuración.
+    _pasarelas = {
+        'STRIPE': PasarelaStripe,
+        'MERCADOPAGO': PasarelaMercadoPago,
+        'PAYPAL': PasarelaPayPal,
+        'MOCK': PasarelaMock,
+    }
+    
+    @classmethod
+    def register_pasarela(cls, nombre: str, clase_pasarela: type) -> None:
+        """Registra una nueva pasarela dinámicamente.
+        
+        Permite extensión sin modificar el código (OCP).
         
         Args:
-            proveedor: Nombre del proveedor ('stripe', 'mercadopago', 'paypal')
-                      Si es None, usa ENV_PAYMENT_PROVIDER
+            nombre: Nombre identificador de la pasarela
+            clase_pasarela: Clase que implementa Pasarela
+            
+        Raises:
+            TypeError: Si la clase no hereda de Pasarela
+        """
+        if not issubclass(clase_pasarela, Pasarela):
+            raise TypeError(f"{clase_pasarela} debe heredar de Pasarela")
+        cls._pasarelas[nombre.upper()] = clase_pasarela
+    
+    @classmethod
+    def crear_pasarela(cls, proveedor=None) -> Pasarela:
+        """Crea una instancia de pasarela.
+        
+        Args:
+            proveedor: Nombre del proveedor. Si es None, usa variable de entorno.
+                      Soporta: STRIPE, MERCADOPAGO, PAYPAL, MOCK
         
         Returns:
-            Pasarela: Instancia de la pasarela configurada
+            Pasarela: Instancia de la pasarela
         """
         if proveedor is None:
             proveedor = os.getenv("ENV_PAYMENT_PROVIDER", "MOCK").upper()
         else:
             proveedor = proveedor.upper()
         
-        proveedores = {
-            'STRIPE': PasarelaStripe,
-            'MERCADOPAGO': PasarelaMercadoPago,
-            'PAYPAL': PasarelaPayPal,
-            'MOCK': PasarelaMock,
-        }
-        
-        clase_pasarela = proveedores.get(proveedor, PasarelaMock)
+        clase_pasarela = cls._pasarelas.get(proveedor, PasarelaMock)
         return clase_pasarela()
+    
+    @classmethod
+    def get_disponibles(cls) -> list:
+        """Retorna lista de pasarelas disponibles."""
+        return list(cls._pasarelas.keys())

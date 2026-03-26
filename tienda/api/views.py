@@ -218,6 +218,7 @@ class AgregarAlCarritoAPI(APIView):
     def post(self, request):
         """
         Agrega un producto al carrito.
+        Requiere que el usuario esté autenticado.
         
         Entrada esperada:
         {
@@ -226,6 +227,16 @@ class AgregarAlCarritoAPI(APIView):
             "cantidad": 2
         }
         """
+        # Verificar si el usuario está autenticado
+        if not request.user.is_authenticated:
+            return Response(
+                {
+                    "error": "Debe iniciar sesión para agregar productos al carrito",
+                    "require_login": True
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
         serializer = AgregarAlCarritoSerializer(data=request.data)
         
         if not serializer.is_valid():
