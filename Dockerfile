@@ -18,6 +18,10 @@ COPY . .
 # Crear directorios necesarios
 RUN mkdir -p /app/staticfiles /app/media
 
+# Copiar script de inicialización
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8000/admin || exit 1
@@ -25,5 +29,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 # Exponer puerto
 EXPOSE 8000
 
-# Entrypoint
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn habite_project.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 60 --access-logfile - --error-logfile -"]
+# Usar script de inicialización
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
