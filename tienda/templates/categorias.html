@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorías | HABITÉ</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --verde: #0f3d1f;
+            --beige: #ebe5d8;
+            --verde-oscuro: #0a2c16;
+            --beige-oscuro: #d4cbbe;
+            --gris-claro: #f8f6f2;
+            --texto-oscuro: #2a2a2a;
+            --texto-gris: #666666;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--texto-oscuro);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* SIDEBAR MENU */
+        .sidebar-menu {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            z-index: 2000;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 8px rgba(15, 61, 31, 0.12);
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-menu.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 2px solid var(--beige);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--verde);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .sidebar-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--texto-gris);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .sidebar-close:hover {
+            color: var(--verde);
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--texto-oscuro);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover {
+            background: var(--gris-claro);
+            border-left-color: var(--verde);
+            color: var(--verde);
+        }
+
+        .sidebar-menu a.active {
+            background: var(--gris-claro);
+            border-left-color: var(--verde);
+            color: var(--verde);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--beige-oscuro);
+            margin: 20px 0;
+        }
+
+        .sidebar-logout {
+            color: #d32f2f !important;
+        }
+
+        .sidebar-logout:hover {
+            background: rgba(211, 47, 47, 0.1) !important;
+        }
+
+        /* OVERLAY */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 16px 0;
+        }
+
+        .navbar-container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px;
+            min-height: 50px;
+        }
+
+        .navbar-start {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            position: fixed;
+            left: 30px;
+            top: 25px;
+            z-index: 1001;
+        }
+
+        .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            color: var(--texto-oscuro) !important;
+            font-size: 28px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .navbar-center {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-menu li a {
+            color: var(--texto-oscuro);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-menu li a:hover {
+            color: var(--verde);
+        }
+
+        .navbar-end {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: fixed;
+            right: 30px;
+            top: 31px;
+            z-index: 1001;
+        }
+
+        .navbar-icon {
+            color: var(--verde);
+            text-decoration: none;
+            font-size: 20px;
+            transition: color 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .navbar-icon:hover {
+            color: var(--verde-oscuro);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2.5px;
+            background: var(--verde);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(9px, 9px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* PAGE HEADER */
+        .categories-page-header {
+            background: linear-gradient(135deg, #f5f3f0 0%, var(--gris-claro) 100%);
+            padding: 80px 20px 60px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .categories-page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 56px;
+            color: var(--verde);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .categories-page-header p {
+            font-size: 18px;
+            color: var(--texto-gris);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* MAIN CATEGORIES GRID */
+        .main-categories-section {
+            padding: 80px 20px;
+            background: white;
+        }
+
+        .main-categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .main-category-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .main-category-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .main-category-image {
+            width: 100%;
+            height: 350px;
+            background: linear-gradient(135deg, #f0e9e0 0%, #ebe5d8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .main-category-image.textiles {
+            background: linear-gradient(135deg, #e8dcc8 0%, #d9cbb8 100%);
+        }
+
+        .main-category-image.decoracion {
+            background: linear-gradient(135deg, #efe6da 0%, #e5dace 100%);
+        }
+
+        .main-category-image.mobiliario {
+            background: linear-gradient(135deg, #f0e9e0 0%, #ebe5d8 100%);
+        }
+
+        .main-category-image.iluminacion {
+            background: linear-gradient(135deg, #faf4eb 0%, #f0e9e0 100%);
+        }
+
+        .main-category-image i {
+            font-size: 120px;
+            color: rgba(15, 61, 31, 0.2);
+        }
+
+        .main-category-content {
+            padding: 32px 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .main-category-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--verde);
+            margin-bottom: 12px;
+        }
+
+        .main-category-description {
+            color: var(--texto-gris);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .main-category-link {
+            color: var(--verde);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .main-category-link:hover {
+            gap: 12px;
+            color: var(--verde-oscuro);
+        }
+
+        /* PROMO SECTION */
+        .promo-section {
+            padding: 60px 20px;
+            background: linear-gradient(135deg, var(--verde) 0%, var(--verde-oscuro) 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .promo-content h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .promo-content p {
+            font-size: 16px;
+            margin-bottom: 30px;
+            opacity: 0.95;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-promo {
+            background: white;
+            color: var(--verde);
+            border: none;
+            padding: 14px 40px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-promo:hover {
+            background: var(--beige);
+            color: var(--verde-oscuro);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* FOOTER */
+        footer {
+            background: var(--texto-oscuro);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: auto;
+        }
+
+        @media (max-width: 768px) {
+            .categories-page-header h1 {
+                font-size: 36px;
+            }
+
+            .main-categories-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .main-category-image {
+                height: 250px;
+            }
+
+            .main-category-image i {
+                font-size: 80px;
+            }
+
+            .main-categories-section {
+                padding: 60px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- SIDEBAR MENU -->
+    <aside class="sidebar-menu" id="sidebarMenu">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">HABITÉ</h3>
+            <button class="sidebar-close" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <a href="{% url 'inicio' %}">
+            <i class="fas fa-home"></i> Inicio
+        </a>
+        <a href="{% url 'catalogo' %}">
+            <i class="fas fa-shopping-bag"></i> Catálogo
+        </a>
+        <a href="#" class="active">
+            <i class="fas fa-th"></i> Categorías
+        </a>
+        <div class="sidebar-divider"></div>
+        {% if user.is_authenticated %}
+            <a href="{% url 'perfil' %}">
+                <i class="fas fa-user-circle"></i> Mi Perfil
+            </a>
+            <a href="{% url 'mis_pedidos' %}">
+                <i class="fas fa-box"></i> Mis Pedidos
+            </a>
+            {% if user.is_staff %}
+                <a href="{% url 'gestionar_pedidos' %}">
+                    <i class="fas fa-tasks"></i> Gestionar Pedidos
+                </a>
+                <a href="{% url 'agregar_producto' %}">
+                    <i class="fas fa-plus"></i> Agregar Producto
+                </a>
+            {% endif %}
+            <a href="{% url 'logout' %}" class="sidebar-logout">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </a>
+        {% else %}
+            <a href="{% url 'login' %}">
+                <i class="fas fa-sign-in-alt"></i> Ingresar
+            </a>
+            <a href="{% url 'signup' %}">
+                <i class="fas fa-user-plus"></i> Crear Cuenta
+            </a>
+        {% endif %}
+    </aside>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-start">
+                <button class="menu-toggle" onclick="abrirSidebar()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+
+            <div class="navbar-center">
+                <a href="{% url 'inicio' %}" class="navbar-brand">
+                    HABITÉ
+                </a>
+            </div>
+
+            <div class="navbar-end">
+                <a href="javascript:abrirCarrito()" class="navbar-icon" title="Mi Carrito">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'perfil' %}" class="navbar-icon" title="Mi Perfil">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="navbar-icon" title="Ingresar">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- PAGE HEADER -->
+    <section class="categories-page-header">
+        <h1>Nuestras Categorías</h1>
+        <p>Explora nuestra selección premium de productos para el hogar</p>
+    </section>
+
+    <!-- MAIN CATEGORIES -->
+    <section class="main-categories-section">
+        <div class="main-categories-grid">
+            <!-- TEXTILES -->
+            <a href="{% url 'catalogo' %}?categoria=textiles" class="main-category-card">
+                <div class="main-category-image textiles">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="main-category-content">
+                    <h3 class="main-category-name">Textiles</h3>
+                    <p class="main-category-description">
+                        Descubre nuestra colección de telas premium, cobijas y accesorios textiles para dar calidez y confort a tu hogar.
+                    </p>
+                    <a class="main-category-link">
+                        Explorar <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </a>
+
+            <!-- DECORACIÓN -->
+            <a href="{% url 'catalogo' %}?categoria=decoracion" class="main-category-card">
+                <div class="main-category-image decoracion">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <div class="main-category-content">
+                    <h3 class="main-category-name">Decoración</h3>
+                    <p class="main-category-description">
+                        Artículos decorativos cuidadosamente seleccionados para transformar y personalizar cada espacio de tu hogar.
+                    </p>
+                    <a class="main-category-link">
+                        Explorar <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </a>
+
+            <!-- MOBILIARIO -->
+            <a href="{% url 'catalogo' %}?categoria=mobiliario" class="main-category-card">
+                <div class="main-category-image mobiliario">
+                    <i class="fas fa-chair"></i>
+                </div>
+                <div class="main-category-content">
+                    <h3 class="main-category-name">Mobiliario</h3>
+                    <p class="main-category-description">
+                        Muebles de calidad superior que combinan diseño moderno con funcionalidad y durabilidad incomparables.
+                    </p>
+                    <a class="main-category-link">
+                        Explorar <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </a>
+
+            <!-- ILUMINACIÓN -->
+            <a href="{% url 'catalogo' %}?categoria=iluminacion" class="main-category-card">
+                <div class="main-category-image iluminacion">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="main-category-content">
+                    <h3 class="main-category-name">Iluminación</h3>
+                    <p class="main-category-description">
+                        Soluciones de iluminación elegantes que crean ambientes acogedores y destacan la belleza de tu decoración.
+                    </p>
+                    <a class="main-category-link">
+                        Explorar <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- PROMO SECTION -->
+    <section class="promo-section">
+        <div class="promo-content">
+            <h3>¿No sabes por dónde empezar?</h3>
+            <p>Explora nuestro catálogo completo y descubre productos que transformarán tu hogar en un espacio único y confortable.</p>
+            <a href="{% url 'catalogo' %}" class="btn-promo">
+                <i class="fas fa-shopping-bag"></i> Ver Catálogo Completo
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2026 <strong>HABITÉ</strong> - Artículos Premium para el Hogar</p>
+        <p style="margin-top: 10px; font-size: 12px;">
+            Diseño elegante | Calidad premium | Entrega rápida
+        </p>
+    </footer>
+
+    <!-- MODAL CARRITO -->
+    <div class="modal fade" id="modalCarrito" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shopping-cart"></i> Mi Carrito
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="carritoContent">
+                    <p class="text-center text-muted">Cargando carrito...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cliente actual (se carga al iniciar la página)
+        let clienteActual = { id: null };
+        let pedido = [];
+
+        // Funciones del sidebar
+        function abrirSidebar() {
+            document.getElementById('sidebarMenu').classList.add('active');
+            document.getElementById('sidebarOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrarSidebar() {
+            document.getElementById('sidebarMenu').classList.remove('active');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Cerrar sidebar con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                cerrarSidebar();
+            }
+        });
+
+        function abrirCarrito() {
+            const modal = new bootstrap.Modal(document.getElementById('modalCarrito'));
+            modal.show();
+            cargarCarrito();
+        }
+
+        function cargarClienteUsuario() {
+            if (!clienteActual.id) {
+                fetch("/api/mi-cliente/")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.cliente && data.cliente.id) {
+                            clienteActual.id = data.cliente.id;
+                        }
+                    })
+                    .catch(err => console.error("Error al cargar cliente:", err));
+            }
+        }
+
+        function cargarCarrito() {
+            if (!clienteActual.id) {
+                document.getElementById('carritoContent').innerHTML = 
+                    '<p class="text-center text-warning">Por favor, <a href="/login/">inicia sesión</a> para ver tu carrito.</p>';
+                cargarClienteUsuario();
+                return;
+            }
+
+            fetch(`/api/carrito/${clienteActual.id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const content = document.getElementById('carritoContent');
+                    if (data.items && data.items.length > 0) {
+                        let html = '<div class="carrito-items">';
+                        data.items.forEach(item => {
+                            html += `
+                                <div class="carrito-item" style="padding: 12px; background: #f8f6f2; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h6 style="margin: 0; color: #2a2a2a;">${item.producto_nombre}</h6>
+                                        <p style="margin: 4px 0 0 0; color: #666; font-size: 12px;">$${item.precio_unitario} x ${item.cantidad}</p>
+                                    </div>
+                                    <div style="color: #0f3d1f; font-weight: 700;">$${item.subtotal.toFixed(2)}</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div><div class="carrito-total" style="margin-top: 16px; border-top: 1px solid #e8dfd3; padding-top: 16px;"><div style="display: flex; justify-content: space-between;"><strong>Total:</strong><strong style="color: #0f3d1f; font-size: 20px;">$' + data.total + '</strong></div></div>';
+                        content.innerHTML = html;
+                    } else {
+                        content.innerHTML = '<p class="text-center text-muted">Tu carrito está vacío</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando carrito:', error);
+                    document.getElementById('carritoContent').innerHTML = '<p class="text-center text-danger">Error al cargar el carrito</p>';
+                });
+        }
+
+        // Cargar cliente cuando la página carga
+        cargarClienteUsuario();
+    </script>
+</body>
+</html>

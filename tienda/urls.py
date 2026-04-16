@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import (InicioView, CatalogoView, LoginView, SignUpView, logout_view, AgregarProductoView, PerfilView, 
-                    MisPedidosView, GestionarPedidosView, DetallePedidoUserView, DetallePedidoAdminView)
+from .views import (InicioView, CatalogoView, CategoriasView, LoginView, SignUpView, logout_view, AgregarProductoView, PerfilView, 
+                    MisPedidosView, GestionarPedidosView, DetallePedidoUserView, DetallePedidoAdminView, descargar_factura, pagar_ahora)
 from .api.api_views import (
     ProductosAPI, 
     ProductoDetalleAPI,
@@ -26,6 +26,7 @@ urlpatterns = [
     # Vistas tradicionales (Class-Based Views)
     path("", InicioView.as_view(), name="inicio"),
     path("catalogo/", CatalogoView.as_view(), name="catalogo"),
+    path("categorias/", CategoriasView.as_view(), name="categorias"),
     path("login/", LoginView.as_view(), name="login"),
     path("signup/", SignUpView.as_view(), name="signup"),
     path("logout/", logout_view, name="logout"),
@@ -35,6 +36,8 @@ urlpatterns = [
     path("gestionar-pedidos/", GestionarPedidosView.as_view(), name="gestionar_pedidos"),
     path("gestionar-pedidos/<int:pedido_id>/", DetallePedidoAdminView.as_view(), name="detalle_pedido_admin"),
     path("agregar-producto/", AgregarProductoView.as_view(), name="agregar_producto"),
+    path("pedidos/<int:pedido_id>/descargar-factura/", descargar_factura, name="descargar_factura"),
+    path("pedidos/<int:pedido_id>/pagar-ahora/", pagar_ahora, name="pagar_ahora"),
 
     # APIs REST - Productos
     path("api/productos/", ProductosAPI.as_view(), name="api-productos"),

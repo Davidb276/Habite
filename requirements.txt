@@ -1,0 +1,20 @@
+# Core Django
+Django==5.2.4
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# WSGI/Server
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# PDF Generation
+reportlab==4.4.10
+Pillow==10.1.0
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
+python-dateutil==2.8.2
+
+# Security
+cryptography==41.0.7

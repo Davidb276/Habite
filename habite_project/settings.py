@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-fyop&d=a^q*fud0$@odo*24%rum_)qq6d!+(zns%#n2rciekx7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'nginx', 'django_web']
 
 
 # Application definition
@@ -117,6 +117,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (Imágenes subidas)
 MEDIA_URL = '/media/'
@@ -129,4 +130,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login configuration
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'catalogo'
+LOGIN_REDIRECT_URL = 'inicio'

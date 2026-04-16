@@ -1,6 +1,23 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# ===================== CATEGORÍA =====================
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(unique=True)
+    descripcion = models.TextField(blank=True)
+    imagen = models.ImageField(upload_to='categorias/', null=True, blank=True)
+    icono = models.CharField(max_length=100, default='fas fa-box', help_text='Ej: fas fa-chair')
+    orden = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden']
+        verbose_name_plural = 'Categorías'
+
+    def __str__(self):
+        return self.nombre
+
+
 # ===================== CLIENTE =====================
 class Cliente(models.Model):
     nombre = models.CharField(max_length=100)
@@ -20,9 +37,24 @@ class Producto(models.Model):
     descripcion = models.TextField()
     imagen = models.ImageField(upload_to='productos/', null=True, blank=True)
     es_premium = models.BooleanField(default=True)
+    en_oferta = models.BooleanField(default=False)
+    descuento_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text='Porcentaje de descuento (0-100)')
 
     def __str__(self):
         return self.nombre
+
+    def get_precio_descuento(self):
+        """Calcula el precio con descuento"""
+        if self.en_oferta and self.descuento_porcentaje > 0:
+            descuento = self.precio * (self.descuento_porcentaje / 100)
+            return self.precio - descuento
+        return self.precio
+
+    def get_descuento_monetario(self):
+        """Calcula cuánto se ahorra en dinero"""
+        if self.en_oferta and self.descuento_porcentaje > 0:
+            return self.precio * (self.descuento_porcentaje / 100)
+        return 0
 
 
 # ===================== INVENTARIO =====================

@@ -6,40 +6,95 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy
 from django.contrib.auth.models import User
-from django.http import Http404
+from django.http import Http404, HttpResponse, FileResponse
 from django.db.models import Q
-from .models import Producto, Pedido, Pago, Envio, Cliente
+from .models import Producto, Pedido, Pago, Envio, Cliente, Categoria
 from .forms import SignUpForm, PerfilUsuarioForm, PerfilClienteForm
 
 
 class InicioView(TemplateView):
     """Vista de bienvenida/sobre nosotros - Página principal"""
     template_name = "inicio.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categorias'] = Categoria.objects.all()
+        context['ofertas'] = Producto.objects.filter(en_oferta=True).order_by('-descuento_porcentaje')[:6]
+        return context
+
+
+class CategoriasView(TemplateView):
+    """Vista de categorías principales"""
+    template_name = "categorias.html"
 
 
 class CatalogoView(ListView):
-    """Vista de catálogo con todos los productos"""
+    """Vista de catálogo con filtrado por categoría y ofertas"""
     model = Producto
     template_name = "catalogo.html"
     context_object_name = "productos"
+    paginate_by = 12
     
     def get_queryset(self):
-        """Obtiene todos los productos ordenados por nombre"""
-        return Producto.objects.all().order_by('nombre')
+        """Obtiene productos, opcionalmente filtrados por categoría u ofertas"""
+        queryset = Producto.objects.all().order_by('nombre')
+        
+        # Filtrar por ofertas si se proporciona en query string
+        mostrar_ofertas = self.request.GET.get('ofertas')
+        if mostrar_ofertas == 'true':
+            queryset = queryset.filter(en_oferta=True)
+        
+        # Filtrar por categoría si se proporciona en query string
+        categoria_slug = self.request.GET.get('categoria')
+        if categoria_slug:
+            # Buscar la categoría por slug
+            try:
+                categoria = Categoria.objects.get(slug=categoria_slug)
+                # Filtrar productos que coincidan con el nombre de la categoría
+                queryset = queryset.filter(categoria__icontains=categoria.nombre)
+            except Categoria.DoesNotExist:
+                pass
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        """Agregar la categoría seleccionada al contexto"""
+        context = super().get_context_data(**kwargs)
+        categoria_slug = self.request.GET.get('categoria')
+        mostrar_ofertas = self.request.GET.get('ofertas')
+        
+        if mostrar_ofertas == 'true':
+            context['titulo_catalogo'] = "Ofertas Disponibles"
+        elif categoria_slug:
+            try:
+                context['categoria_seleccionada'] = Categoria.objects.get(slug=categoria_slug)
+                context['titulo_catalogo'] = f"Catálogo - {context['categoria_seleccionada'].nombre}"
+            except Categoria.DoesNotExist:
+                context['titulo_catalogo'] = "Catálogo"
+        else:
+            context['titulo_catalogo'] = "Catálogo"
+        
+        return context
 
 
 class LoginView(DjangoLoginView):
-    """Vista de login personalizada"""
+    """Vista de login personalizada - redirige a la página anterior o a inicio"""
     template_name = "login.html"
-    success_url = reverse_lazy("catalogo")
     redirect_authenticated_user = True
+    
+    def get_success_url(self):
+        """Redirige a la página 'next' si existe, si no a inicio"""
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy("inicio")
 
 
 class SignUpView(FormView):
     """Vista de registro que crea automáticamente User y Cliente"""
     template_name = "signup.html"
     form_class = SignUpForm
-    success_url = reverse_lazy("catalogo")
+    success_url = reverse_lazy("inicio")
     
     def dispatch(self, request, *args, **kwargs):
         """Redirige al catálogo si el usuario ya está autenticado"""
@@ -221,3 +276,108 @@ class DetallePedidoAdminView(DetailView):
         context['pago'] = Pago.objects.filter(pedido=self.object).first()
         context['envio'] = Envio.objects.filter(pedido=self.object).first()
         return context
+
+
+@login_required(login_url='login')
+def descargar_factura(request, pedido_id):
+    """Vista para descargar la factura en PDF de un pedido - Usa Flask como primary, Django como fallback"""
+    import requests
+    from .services import FacturaService
+    
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar que el usuario sea el propietario del pedido o admin
+    if request.user != pedido.usuario and not request.user.is_superuser:
+        raise Http404("No tienes acceso a esta factura")
+    
+    # Intenta usar Flask primero
+    try:
+        # Preparar datos del pedido para Flask
+        pedido_data = {
+            'pedido': {
+                'id': pedido.id,
+                'fecha': pedido.fecha.isoformat() if pedido.fecha else '',
+                'cliente_nombre': f"{pedido.usuario.first_name} {pedido.usuario.last_name}".strip() or pedido.usuario.username,
+                'cliente_email': pedido.usuario.email,
+                'cliente_telefono': pedido.cliente.telefono if pedido.cliente else '',
+                'cliente_direccion': pedido.cliente.direccion if pedido.cliente else '',
+                'total': float(pedido.total),
+                'items': [
+                    {
+                        'nombre': item.producto.nombre,
+                        'cantidad': item.cantidad,
+                        'precio_unitario': float(item.precio_unitario),
+                        'subtotal': float(item.cantidad * item.precio_unitario)
+                    }
+                    for item in pedido.pedidoitem_set.all()
+                ]
+            }
+        }
+        
+        # Llamar a Flask - usa localhost para trabajar dentro de Docker
+        response = requests.post(
+            'http://flask_payment:5000/api/v2/facturas/generar',
+            json=pedido_data,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            # Retornar el PDF generado por Flask
+            pdf_response = FileResponse(
+                response.content,
+                as_attachment=True,
+                filename=f'factura_pedido_{pedido.id}.pdf'
+            )
+            pdf_response['Content-Type'] = 'application/pdf'
+            return pdf_response
+    except Exception as e:
+        # Si hay error con Flask, registrarlo pero continuar con fallback
+        import logging
+        logging.debug(f"Error llamando a Flask: {str(e)}")
+    
+    # Fallback: Generar PDF localmente en Django
+    try:
+        pdf_buffer = FacturaService.generar_factura_pdf(pedido)
+        response = FileResponse(pdf_buffer, as_attachment=True, filename=f'factura_pedido_{pedido.id}.pdf')
+        response['Content-Type'] = 'application/pdf'
+        return response
+    except Exception as e:
+        raise Http404(f"Error generando factura: {str(e)}")
+
+
+@login_required(login_url='login')
+def pagar_ahora(request, pedido_id):
+    """Vista que genera la factura y abre WhatsApp para pagar"""
+    from .services import FacturaService
+    
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar que el usuario sea el propietario del pedido
+    if request.user != pedido.usuario and not request.user.is_superuser:
+        raise Http404("No tienes acceso a este pedido")
+    
+    # Generar PDF solo para verificar que funciona
+    pdf_buffer = FacturaService.generar_factura_pdf(pedido)
+    
+    # Mensaje para WhatsApp mejorado
+    mensaje = f"Hola HABITÉ, ya realicé la transferencia por Bancolombia del pedido #{pedido.id} por ${pedido.total:,.0f} COP. Le adjunto el comprobante de pago. Gracias 🙏"
+    
+    # Número de WhatsApp (el número de HABITÉ)
+    numero_whatsapp = "573238071236"
+    
+    # Encoding para URL
+    from urllib.parse import quote
+    mensaje_encoded = quote(mensaje)
+    
+    # Construir URL de WhatsApp
+    url_whatsapp = f"https://wa.me/{numero_whatsapp}?text={mensaje_encoded}"
+    
+    # Retornar contexto
+    context = {
+        'pedido': pedido,
+        'url_whatsapp': url_whatsapp,
+        'pedido_id': pedido_id,
+        'cliente_id': pedido.cliente.id,
+    }
+    
+    return render(request, 'pagar_ahora.html', context)

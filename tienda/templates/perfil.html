@@ -38,17 +38,146 @@
         /* NAVBAR */
         .navbar {
             background: white;
-            box-shadow: 0 2px 8px rgba(15, 61, 31, 0.08);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             position: sticky;
             top: 0;
             z-index: 1000;
+            padding: 16px 0;
+        }
+
+        .navbar-container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px;
+            min-height: 50px;
+        }
+
+        .navbar-start {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            position: fixed;
+            left: 30px;
+            top: 25px;
+            z-index: 1001;
         }
 
         .navbar-brand {
             font-family: 'Playfair Display', serif;
-            color: var(--verde) !important;
-            font-size: 24px;
+            color: var(--texto-oscuro) !important;
+            font-size: 28px;
             font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .navbar-center {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-menu li a {
+            color: var(--texto-oscuro);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-menu li a:hover {
+            color: var(--verde);
+        }
+
+        .navbar-end {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: fixed;
+            right: 30px;
+            top: 31px;
+            z-index: 1001;
+        }
+
+        .navbar-icon {
+            color: var(--verde);
+            text-decoration: none;
+            font-size: 20px;
+            transition: color 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .navbar-icon:hover {
+            color: var(--verde-oscuro);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 25px;
+            height: 2.5px;
+            background: var(--verde);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .menu-toggle:hover span {
+            background: var(--verde-oscuro);
+            width: 28px;
+        }
+
+        @media (max-width: 1024px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .navbar-start {
+                gap: 12px;
+                flex: 0;
+            }
+
+            .navbar-center {
+                flex: 1;
+                gap: 0;
+            }
+
+            .navbar-brand {
+                font-size: 24px;
+            }
         }
 
         /* MAIN CONTENT */
@@ -369,71 +498,38 @@
 </head>
 <body>
     <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <button 
-                class="btn btn-link"
-                onclick="abrirSidebar()"
-                style="background: none; border: none; color: var(--verde); font-size: 24px; margin-right: 10px; padding: 0;"
-            >
-                <i class="fas fa-bars"></i>
-            </button>
-            <a class="navbar-brand" href="{% url 'catalogo' %}">
-                <i class="fas fa-leaf"></i> HABITÉ
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalogo' %}">
-                            <i class="fas fa-store"></i> Catálogo
-                        </a>
-                    </li>
-                    {% if request.user.is_authenticated %}
-                        {% if request.user.is_superuser %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'gestionar_pedidos' %}">
-                                    <i class="fas fa-clipboard-list"></i> Gestión Pedidos
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'mis_pedidos' %}">
-                                    <i class="fas fa-box"></i> Mis Pedidos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'perfil' %}">
-                                    <i class="fas fa-user-edit"></i> Perfil
-                                </a>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="abrirCarrito(); return false;" style="cursor: pointer;">
-                                <i class="fas fa-shopping-cart"></i> Carrito
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">
-                                <i class="fas fa-sign-out-alt"></i> Salir
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Ingresar
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-start">
+                <button class="menu-toggle" onclick="abrirSidebar()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+
+            <div class="navbar-center">
+                <a href="{% url 'inicio' %}" class="navbar-brand">
+                    HABITÉ
+                </a>
+            </div>
+
+            <div class="navbar-end">
+                <a href="javascript:abrirCarrito()" class="navbar-icon" title="Mi Carrito">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'perfil' %}" class="navbar-icon" title="Mi Perfil">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="navbar-icon" title="Ingresar">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </a>
+                {% endif %}
             </div>
         </div>
     </nav>
-
-    <!-- SIDEBAR OVERLAY -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="cerrarSidebar()"></div>
 
     <!-- SIDEBAR OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="cerrarSidebar()"></div>

@@ -1,4 +1,6 @@
 from django.db import transaction
+from decimal import Decimal
+from datetime import datetime, timedelta
 from tienda.domain.builders import PedidoBuilder
 from tienda.infra.factories import NotificadorFactory, PasarelaFactory
 from tienda.models import Cliente, Producto, Pedido, Inventario, Pago, Envio, Carrito, CarritoItem
@@ -315,7 +317,9 @@ class CartService:
     def crear_pedido_desde_carrito(self, cliente_id, metodo_pago, direccion_entrega, usuario=None):
         """
         Crea un pedido a partir del carrito y procesa pago y envío.
-        Delega responsabilidades a servicios inyectados (DIP).
+        Reutiliza pedidos pendientes SOLO si tienen los MISMOS items del carrito.
+        Si cambian los items, crea un nuevo pedido.
+        Aplica descuento para "Pago Adelantado".
         
         Args:
             cliente_id: ID del cliente
@@ -330,22 +334,219 @@ class CartService:
         if not carrito.items.exists():
             raise ValidationError("El carrito está vacío")
         
-        # Convertir items del carrito a formato para crear pedido
-        productos_data = [
+        # Obtener items del carrito actual
+        items_carrito_set = set(
             (item.producto_id, item.cantidad)
             for item in carrito.items.all()
-        ]
+        )
+        
+        # Verificar si existe un pedido pendiente del cliente
+        try:
+            pedido_pendiente = Pedido.objects.filter(
+                cliente_id=cliente_id,
+                estado="Pendiente"
+            ).latest('fecha')
+            
+            # Obtener items del pedido pendiente
+            items_pedido_set = set(
+                (item.producto_id, item.cantidad)
+                for item in pedido_pendiente.items.all()
+            )
+            
+            # Si los items son iguales, reutilizar
+            if items_carrito_set == items_pedido_set:
+                pago = Pago.objects.get(pedido_id=pedido_pendiente.id)
+                pago.metodo_pago = metodo_pago
+                pago.monto = pedido_pendiente.total
+                pago.save()
+                
+                envio = Envio.objects.get(pedido_id=pedido_pendiente.id)
+                envio.direccion_entrega = direccion_entrega
+                envio.save()
+                
+                return {
+                    "pedido": pedido_pendiente,
+                    "pago": pago,
+                    "envio": envio
+                }
+        except Pedido.DoesNotExist:
+            pass
+        
+        # Si no existe pedido pendiente o los items cambiaron, crear uno nuevo
+        productos_data = list(items_carrito_set)
         
         # Delegar a servicios inyectados (cumple DIP)
         pedido = self.pedido_service.crear_pedido(cliente_id, productos_data, usuario=usuario)
+        
+        # Aplicar descuento o recargo según método de pago
+        DESCUENTO_PAGO_ADELANTADO = Decimal('0.03')  # 3% descuento
+        if metodo_pago == "Pago Adelantado":
+            descuento = pedido.total * DESCUENTO_PAGO_ADELANTADO
+            pedido.total -= descuento
+            pedido.save()
+        
         pago = self.pago_service.procesear_pago(pedido.id, metodo_pago, pedido.total)
         envio = self.envio_service.crear_envio(pedido.id, direccion_entrega)
         
-        # Vaciar carrito
-        self.vaciar_carrito(cliente_id)
+        # NO vaciar carrito aquí - dejarlo para cuando el pago se confirme
+        # self.vaciar_carrito(cliente_id)
         
         return {
             "pedido": pedido,
             "pago": pago,
             "envio": envio
         }
+
+
+class FacturaService:
+    """Gestiona la generación de facturas en PDF."""
+    
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from datetime import datetime
+    from io import BytesIO
+    
+    @staticmethod
+    def generar_factura_pdf(pedido):
+        """
+        Genera una factura en PDF para un pedido.
+        
+        Args:
+            pedido: Instancia del modelo Pedido
+            
+        Returns:
+            BytesIO con el contenido del PDF
+        """
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+        from reportlab.lib import colors
+        from io import BytesIO
+        
+        pdf_buffer = BytesIO()
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Estilos personalizados
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#0f3d1f'),
+            spaceAfter=30,
+            alignment=1  # Centrado
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=12,
+            textColor=colors.HexColor('#0f3d1f'),
+            spaceAfter=12,
+            spaceBefore=12
+        )
+        
+        # Título
+        elements.append(Paragraph("FACTURA", title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Info de HABITÉ
+        elements.append(Paragraph("<b>HABITÉ</b> - Artículos Premium para el Hogar", styles['Normal']))
+        elements.append(Paragraph("WhatsApp: +57 323 8071236", styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Info del pedido
+        data_pedido = [
+            ['Número de Pedido:', f'#{pedido.id}'],
+            ['Fecha:', pedido.fecha.strftime('%d/%m/%Y %H:%M')],
+        ]
+        
+        tabla_pedido = Table(data_pedido, colWidths=[2*inch, 3*inch])
+        tabla_pedido.setStyle(TableStyle([
+            ('FONT', (0, 0), (-1, -1), 'Helvetica', 10),
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ebe5d8')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.white, colors.HexColor('#f8f6f2')]),
+        ]))
+        
+        elements.append(tabla_pedido)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Datos del cliente
+        elements.append(Paragraph("<b>Datos de Envío</b>", heading_style))
+        elements.append(Paragraph(f"<b>Cliente:</b> {pedido.cliente.nombre}", styles['Normal']))
+        elements.append(Paragraph(f"<b>Email:</b> {pedido.cliente.email}", styles['Normal']))
+        elements.append(Paragraph(f"<b>Teléfono:</b> {pedido.cliente.telefono}", styles['Normal']))
+        elements.append(Paragraph(f"<b>Dirección:</b> {pedido.cliente.direccion}", styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Items del pedido
+        elements.append(Paragraph("<b>Detalles del Pedido</b>", heading_style))
+        
+        items_data = [['Producto', 'Cantidad', 'Precio Unitario', 'Subtotal']]
+        total_items = 0
+        
+        for item in pedido.items.all():
+            subtotal = float(item.producto.precio) * item.cantidad
+            total_items += subtotal
+            items_data.append([
+                item.producto.nombre,
+                str(item.cantidad),
+                f"${item.producto.precio:,.2f}",
+                f"${subtotal:,.2f}"
+            ])
+        
+        items_data.append(['', '', 'TOTAL:', f"${total_items:,.2f}"])
+        
+        tabla_items = Table(items_data, colWidths=[3*inch, 1*inch, 1.5*inch, 1.5*inch])
+        tabla_items.setStyle(TableStyle([
+            ('FONT', (0, 0), (-1, -2), 'Helvetica', 9),
+            ('FONT', (0, -1), (-1, -1), 'Helvetica', 11),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f3d1f')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('GRID', (0, 0), (-1, -2), 1, colors.grey),
+            ('GRID', (0, -1), (-1, -1), 1, colors.HexColor('#0f3d1f')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f8f6f2')]),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#ebe5d8')),
+        ]))
+        
+        elements.append(tabla_items)
+        elements.append(Spacer(1, 0.4*inch))
+        
+        # Mensaje de pago
+        elements.append(Paragraph(
+            "<b>Para completar tu pedido, realiza una transferencia bancaria al número de WhatsApp anterior.</b>",
+            ParagraphStyle(
+                'InfoPago',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.HexColor('#0f3d1f'),
+                alignment=1
+            )
+        ))
+        
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph(
+            "¡Gracias por tu compra en HABITÉ!",
+            ParagraphStyle(
+                'Footer',
+                parent=styles['Normal'],
+                fontSize=9,
+                textColor=colors.grey,
+                alignment=1
+            )
+        ))
+        
+        # Generar PDF
+        doc.build(elements)
+        pdf_buffer.seek(0)
+        return pdf_buffer

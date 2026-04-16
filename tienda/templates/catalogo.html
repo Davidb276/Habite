@@ -51,6 +51,7 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
+        cursor: pointer;
     }
 
     .product-card:hover {
@@ -106,6 +107,34 @@
         font-size: 22px;
         font-weight: 700;
         margin-bottom: 12px;
+    }
+
+    .product-prices {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .product-original-price {
+        text-decoration: line-through;
+        color: var(--texto-gris);
+        font-size: 14px;
+    }
+
+    .product-discount-price {
+        color: var(--verde);
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .product-discount-badge {
+        background: #0891B2;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
     }
 
     .product-footer {
@@ -192,22 +221,262 @@
         from { transform: translateX(400px); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
+
+    /* MODAL DETALLE PRODUCTO */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-container {
+        background: white;
+        border-radius: 12px;
+        max-width: 900px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+        position: relative;
+    }
+
+    .modal-image-section {
+        background: linear-gradient(135deg, var(--gris-claro) 0%, #f5ede2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        border-radius: 12px 0 0 12px;
+        padding: 20px;
+    }
+
+    .modal-image-section img {
+        max-width: 100%;
+        height: auto;
+        max-height: 400px;
+        border-radius: 8px;
+    }
+
+    .modal-image-section i {
+        font-size: 100px;
+        color: var(--beige-oscuro);
+    }
+
+    .modal-content-section {
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: white;
+    }
+
+    .modal-header {
+        margin-bottom: 30px;
+    }
+
+    .modal-category {
+        color: var(--texto-gris);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .modal-title {
+        font-family: 'Playfair Display', serif;
+        color: var(--verde-oscuro);
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        line-height: 1.3;
+    }
+
+    .modal-description {
+        color: var(--texto-gris);
+        font-size: 14px;
+        line-height: 1.8;
+        margin-bottom: 24px;
+        letter-spacing: 0.3px;
+    }
+
+    .modal-pricing {
+        background: var(--gris-claro);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        margin-top: 24px;
+    }
+
+    .modal-pricing-original {
+        color: var(--texto-gris);
+        font-size: 14px;
+        text-decoration: line-through;
+        margin-bottom: 10px;
+    }
+
+    .modal-pricing-current {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+    }
+
+    .modal-price {
+        color: var(--verde);
+        font-size: 36px;
+        font-weight: 700;
+    }
+
+    .modal-discount-badge {
+        background: #0891B2;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .modal-qty {
+        padding: 10px 14px;
+        border: 2px solid var(--beige-oscuro);
+        border-radius: 8px;
+        font-size: 14px;
+        width: 100px;
+        text-align: center;
+        font-weight: 600;
+        background: white;
+    }
+
+    .modal-qty:focus {
+        border-color: var(--verde);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(15, 61, 31, 0.1);
+    }
+
+    .modal-btn-add {
+        flex-grow: 1;
+        background: var(--verde);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .modal-btn-add:hover {
+        background: var(--verde-oscuro);
+        transform: translateY(-2px);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 24px;
+        color: var(--texto-oscuro);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-close:hover {
+        background: var(--gris-claro);
+        transform: rotate(90deg);
+    }
+
+    @media (max-width: 768px) {
+        .modal-container {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-image-section {
+            border-radius: 12px 12px 0 0;
+            min-height: 250px;
+        }
+
+        .modal-content-section {
+            padding: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+        }
+
+        .modal-price {
+            font-size: 28px;
+        }
+
+        .modal-footer {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal-qty {
+            width: 100%;
+        }
+
+        .modal-btn-add {
+            width: 100%;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <section class="header-section">
-        <h1>HABITÉ</h1>
-        <p class="header-subtitle">Artículos premium para tu hogar</p>
+        <h1>{% if categoria_seleccionada %}{{ categoria_seleccionada.nombre }}{% else %}HABITÉ{% endif %}</h1>
+        <p class="header-subtitle">{% if categoria_seleccionada %}Explora nuestra colección de {{ categoria_seleccionada.nombre|lower }}{% else %}Artículos premium para tu hogar{% endif %}</p>
     </section>
 
     <section>
-        <h2>Nuestros Productos</h2>
+        <h2>{% if categoria_seleccionada %}Productos de {{ categoria_seleccionada.nombre }}{% else %}Nuestros Productos{% endif %}</h2>
         {% if productos %}
         <div class="catalog-grid">
             {% for producto in productos %}
-            <div class="product-card">
+            <div class="product-card" 
+                 data-id="{{ producto.id }}"
+                 data-nombre="{{ producto.nombre|escapejs }}"
+                 data-categoria="{{ producto.categoria|escapejs }}"
+                 data-descripcion="{{ producto.descripcion|escapejs }}"
+                 data-precio="{{ producto.precio }}"
+                 data-en-oferta="{{ producto.en_oferta }}"
+                 data-descuento="{{ producto.descuento_porcentaje }}"
+                 data-imagen="{{ producto.imagen.url }}"
+                 onclick="abrirDetalleProducto(this)">
                 <div class="product-image">
                     {% if producto.imagen %}
                         <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -227,10 +496,18 @@
                     <div class="product-category">{{ producto.categoria }}</div>
                     <div class="product-name">{{ producto.nombre }}</div>
                     <div class="product-description">{{ producto.descripcion }}</div>
-                    <div class="product-price">${{ producto.precio|floatformat:2 }}</div>
-                    <div class="product-footer">
+                    {% if producto.en_oferta %}
+                        <div class="product-prices">
+                            <span class="product-original-price">${{ producto.precio|floatformat:0 }}</span>
+                            <span class="product-discount-price">${{ producto.get_precio_descuento|floatformat:0 }}</span>
+                            <span class="product-discount-badge">-{{ producto.descuento_porcentaje|floatformat:0 }}%</span>
+                        </div>
+                    {% else %}
+                        <div class="product-price">${{ producto.precio|floatformat:0 }}</div>
+                    {% endif %}
+                    <div class="product-footer" onclick="event.stopPropagation();">
                         <input type="number" id="cantidad-{{ producto.id }}" value="1" min="1" max="99" class="qty-input">
-                        <button class="btn-add" onclick="agregarProducto({{ producto.id }}, '{{ producto.nombre }}', {{ producto.precio }})">
+                        <button class="btn-add" onclick="agregarProducto({{ producto.id }}, '{{ producto.nombre }}', {{ producto.get_precio_descuento }})">
                             <i class="fas fa-plus"></i> Agregar
                         </button>
                     </div>
@@ -239,14 +516,238 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-center text-muted">No hay productos disponibles</p>
+        <p class="text-center text-muted">{% if categoria_seleccionada %}No hay productos disponibles en la categoría {{ categoria_seleccionada.nombre }}{% else %}No hay productos disponibles{% endif %}</p>
         {% endif %}
     </section>
 </div>
+
+<!-- MODAL DETALLE PRODUCTO -->
+<div id="modalDetalle" class="modal-overlay" onclick="cerrarDetalleProducto(event)">
+    <div class="modal-container" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="cerrarDetalleProducto()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="modal-image-section">
+            <img id="modalImagen" src="" alt="Producto" style="display: none;">
+            <i id="modalIcono" class="fas fa-vase" style="display: none;"></i>
+        </div>
+        
+        <div class="modal-content-section">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalNombre"></h2>
+                <p class="modal-description" id="modalDescripcion"></p>
+            </div>
+            
+            <div>
+                <div class="modal-pricing">
+                    <div id="precioPrecio" style="display: none;">
+                        <div class="modal-pricing-current">
+                            <span class="modal-price" id="modalPrecio"></span>
+                        </div>
+                    </div>
+                    <div id="precioOferta" style="display: none;">
+                        <div class="modal-pricing-original" id="modalPrecioOriginal"></div>
+                        <div class="modal-pricing-current">
+                            <span class="modal-price" id="modalPrecioDescuento"></span>
+                            <span class="modal-discount-badge" id="modalDescuentoBadge"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <input type="number" id="modalCantidad" value="1" min="1" max="99" class="modal-qty">
+                    <button class="modal-btn-add" onclick="agregarProductoDesdeModal()">
+                        <i class="fas fa-plus"></i> Agregar al Carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Función para formatear precios al estilo colombiano
+    function formatearPrecio(numero) {
+        const valor = Math.floor(numero).toString();
+        const partes = [];
+        
+        for (let i = valor.length; i > 0; i -= 3) {
+            partes.unshift(valor.substring(Math.max(0, i - 3), i));
+        }
+        
+        if (partes.length <= 2) {
+            // Menores a 1 millón: punto
+            return partes.join('.');
+        } else {
+            // 1 millón o más: apóstrofo en el primer separador
+            const primera = partes.slice(0, -2).join("'");
+            const resto = partes.slice(-2).join('.');
+            return primera + "'" + resto;
+        }
+    }
+
+    // Formatear precios de productos cuando la página carga
+    document.addEventListener('DOMContentLoaded', function() {
+        const productPrices = document.querySelectorAll('.product-price, .product-original-price, .product-discount-price');
+        productPrices.forEach(element => {
+            const valor = parseInt(element.textContent.replace(/[^0-9]/g, ''));
+            if (!isNaN(valor)) {
+                element.textContent = '$' + formatearPrecio(valor);
+            }
+        });
+    });
+
+    // FUNCIONES PARA MODAL DE DETALLE
+    function abrirDetalleProducto(element) {
+        const productoId = element.dataset.id;
+        const nombre = element.dataset.nombre;
+        const categoria = element.dataset.categoria;
+        const descripcion = element.dataset.descripcion;
+        const precio = parseFloat(element.dataset.precio);
+        const enOferta = element.dataset.enOferta === 'True';
+        const descuentoPorcentaje = parseFloat(element.dataset.descuento);
+        const imagenUrl = element.dataset.imagen;
+        
+        const modal = document.getElementById("modalDetalle");
+        
+        // Poblar datos
+        document.getElementById("modalNombre").textContent = nombre;
+        document.getElementById("modalDescripcion").textContent = descripcion;
+        
+        // Mostrar imagen o icono
+        const img = document.getElementById("modalImagen");
+        const icono = document.getElementById("modalIcono");
+        
+        if (imagenUrl && imagenUrl.trim() !== "") {
+            img.src = imagenUrl;
+            img.style.display = "block";
+            icono.style.display = "none";
+        } else {
+            img.style.display = "none";
+            icono.style.display = "block";
+            // Seleccionar icono según categoría
+            if (categoria.toLowerCase().includes("mobil")) {
+                icono.className = "fas fa-chair";
+            } else if (categoria.toLowerCase().includes("textil")) {
+                icono.className = "fas fa-couch";
+            } else if (categoria.toLowerCase().includes("ilumi")) {
+                icono.className = "fas fa-lightbulb";
+            } else {
+                icono.className = "fas fa-vase";
+            }
+        }
+        
+        // Guardar ID para usarlo en agregar
+        modal.dataset.productoId = productoId;
+        
+        // Manejar precios
+        const precioPrecio = document.getElementById("precioPrecio");
+        const precioOferta = document.getElementById("precioOferta");
+        
+        if (enOferta) {
+            precioPrecio.style.display = "none";
+            precioOferta.style.display = "block";
+            
+            const precioDescuento = precio * (1 - descuentoPorcentaje / 100);
+            
+            document.getElementById("modalPrecioOriginal").textContent = `$${formatearPrecio(precio)}`;
+            document.getElementById("modalPrecioDescuento").textContent = `$${formatearPrecio(precioDescuento)}`;
+            document.getElementById("modalDescuentoBadge").textContent = `-${Math.round(descuentoPorcentaje)}%`;
+        } else {
+            precioPrecio.style.display = "block";
+            precioOferta.style.display = "none";
+            document.getElementById("modalPrecio").textContent = `$${formatearPrecio(precio)}`;
+        }
+        
+        // Resetear cantidad
+        document.getElementById("modalCantidad").value = 1;
+        
+        // Mostrar modal con animación
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+    }
+
+    function cerrarDetalleProducto(event) {
+        // Si es un click en el overlay, cerrar solo si es directamente en el overlay
+        if (event && event.target && event.target.id === "modalDetalle") {
+            const modal = document.getElementById("modalDetalle");
+            modal.classList.remove("active");
+            document.body.style.overflow = "auto";
+        } else if (!event) {
+            // Si no hay evento (llamada directa), simplemente cerrar
+            const modal = document.getElementById("modalDetalle");
+            modal.classList.remove("active");
+            document.body.style.overflow = "auto";
+        }
+    }
+
+    function agregarProductoDesdeModal() {
+        const modal = document.getElementById("modalDetalle");
+        const productoId = modal.dataset.productoId;
+        const cantidad = parseInt(document.getElementById("modalCantidad").value);
+        const nombre = document.getElementById("modalNombre").textContent;
+        const precioElemento = document.getElementById("modalPrecioDescuento") || document.getElementById("modalPrecio");
+        const precioText = precioElemento.textContent;
+        const precio = parseFloat(precioText.replace("$", ""));
+        
+        if (cantidad <= 0) {
+            mostrarMensaje("La cantidad debe ser mayor a 0", "error");
+            return;
+        }
+
+        if (!clienteActual.id) {
+            mostrarMensaje("⏳ Cargando datos del usuario...", "error");
+            setTimeout(() => agregarProductoDesdeModal(), 1500);
+            return;
+        }
+
+        const datos = {
+            cliente_id: clienteActual.id,
+            producto_id: productoId,
+            cantidad: cantidad
+        };
+
+        fetch("/api/carrito/agregar/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken') || ''
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.carrito) {
+                pedido = data.carrito.items.map(item => ({
+                    producto_id: item.producto_id,
+                    nombre: item.producto_nombre,
+                    cantidad: item.cantidad,
+                    subtotal: item.subtotal
+                }));
+                mostrarMensaje("✓ Producto agregado al carrito", "success");
+                cerrarDetalleProducto();
+                actualizarContadorCarrito(data.carrito.cantidad_items);
+            } else {
+                mostrarMensaje("❌ " + (data.error || "No se pudo agregar"), "error");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            mostrarMensaje("❌ Error de red: " + error.message, "error");
+        });
+    }
+
+    // Cerrar modal al presionar ESC
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            cerrarDetalleProducto();
+        }
+    });
+
     function agregarProducto(id, nombre, precio) {
         const cantidad = parseInt(document.getElementById("cantidad-" + id).value);
 
