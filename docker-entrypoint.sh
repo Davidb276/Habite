@@ -20,7 +20,7 @@ from tienda.models import Producto, Categoria
 if Producto.objects.count() == 0:
     print("✅ Creando categorías y productos iniciales...")
     import subprocess
-    subprocess.run(['python', 'manage.py', 'crear_categorias'], check=True)
+    subprocess.run(['python', 'create_categories.py'], check=True)
     subprocess.run(['python', 'manage.py', 'crear_productos'], check=True)
     print("✅ Datos iniciales generados!")
 else:
