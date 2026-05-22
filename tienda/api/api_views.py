@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db.models import Q
+from django.utils.translation import gettext as _
 
 from tienda.models import Producto, Cliente, Pedido
 from tienda.api.serializers import (
@@ -51,7 +52,7 @@ class ProductoDetalleAPI(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Producto.DoesNotExist:
             return Response(
-                {"error": "Producto no encontrado"},
+                {"error": _("Producto no encontrado")},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
@@ -84,7 +85,7 @@ class CrearPedidoAPI(APIView):
         
         if not serializer.is_valid():
             return Response(
-                {"error": "Validación fallida", "detalles": serializer.errors},
+                {"error": _("Validación fallida"), "detalles": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -149,7 +150,7 @@ class PedidoDetalleAPI(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
-                {"error": "Pedido no encontrado"},
+                {"error": _("Pedido no encontrado")},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -199,7 +200,7 @@ class MiClienteAPI(APIView):
         """Obtiene o crea automáticamente el cliente para el usuario autenticado."""
         if not request.user.is_authenticated:
             return Response(
-                {"error": "Usuario no autenticado"},
+                {"error": _("Usuario no autenticado")},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
@@ -209,8 +210,8 @@ class MiClienteAPI(APIView):
                 email=request.user.email,
                 defaults={
                     'nombre': request.user.get_full_name() or request.user.username,
-                    'direccion': 'Por definir',
-                    'telefono': 'Por definir'
+                    'direccion': _("Por definir"),
+                    'telefono': _("Por definir")
                 }
             )
             
@@ -270,7 +271,7 @@ class AgregarAlCarritoAPI(APIView):
         if not request.user.is_authenticated:
             return Response(
                 {
-                    "error": "Debe iniciar sesión para agregar productos al carrito",
+                    "error": _("Debe iniciar sesión para agregar productos al carrito"),
                     "require_login": True
                 },
                 status=status.HTTP_401_UNAUTHORIZED
@@ -280,7 +281,7 @@ class AgregarAlCarritoAPI(APIView):
         
         if not serializer.is_valid():
             return Response(
-                {"error": "Validación fallida", "detalles": serializer.errors},
+                {"error": _("Validación fallida"), "detalles": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -296,7 +297,7 @@ class AgregarAlCarritoAPI(APIView):
             
             return Response(
                 {
-                    "mensaje": "Producto agregado al carrito",
+                    "mensaje": _("Producto agregado al carrito"),
                     "carrito": carrito_serializer.data
                 },
                 status=status.HTTP_200_OK
@@ -327,7 +328,7 @@ class EliminarDelCarritoAPI(APIView):
             
             return Response(
                 {
-                    "mensaje": "Producto eliminado del carrito",
+                    "mensaje": _("Producto eliminado del carrito"),
                     "carrito": carrito_serializer.data
                 },
                 status=status.HTTP_200_OK
@@ -354,7 +355,7 @@ class VaciarCarritoAPI(APIView):
             CartService.vaciar_carrito(cliente_id)
             
             return Response(
-                {"mensaje": "Carrito vaciado exitosamente"},
+                {"mensaje": _("Carrito vaciado exitosamente")},
                 status=status.HTTP_200_OK
             )
         except ValidationError as e:
@@ -387,7 +388,7 @@ class CheckoutCarritoAPI(APIView):
         # Verificar que el usuario está autenticado
         if not request.user.is_authenticated:
             return Response(
-                {"error": "Debe iniciar sesión para completar la compra"},
+                {"error": _("Debe iniciar sesión para completar la compra")},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
@@ -395,7 +396,7 @@ class CheckoutCarritoAPI(APIView):
         
         if not serializer.is_valid():
             return Response(
-                {"error": "Validación fallida", "detalles": serializer.errors},
+                {"error": _("Validación fallida"), "detalles": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -403,24 +404,28 @@ class CheckoutCarritoAPI(APIView):
             cliente_id = serializer.validated_data["cliente_id"]
             metodo_pago = serializer.validated_data["metodo_pago"]
             direccion_entrega = serializer.validated_data["direccion_entrega"]
-            
-            # Obtener o crear cliente para el usuario
-            from django.db import transaction
-            with transaction.atomic():
-                cliente = Cliente.objects.get(id=cliente_id)
-                
-                # Inyectar dependencias para cumplir DIP (Dependency Inversion Principle)
-                cart_service = CartService(
-                    pedido_service=PedidoService(),
-                    pago_service=PagoService(pasarela=PasarelaFactory.crear_pasarela()),
-                    envio_service=EnvioService()
-                )
-                resultado = cart_service.crear_pedido_desde_carrito(
-                    cliente_id,
-                    metodo_pago,
-                    direccion_entrega,
-                    usuario=request.user
-                )
+
+            # Inyectar dependencias para cumplir DIP (Dependency Inversion Principle)
+            cart_service = CartService(
+                pedido_service=PedidoService(),
+                pago_service=PagoService(pasarela=PasarelaFactory.crear_pasarela()),
+                envio_service=EnvioService()
+            )
+            resultado = cart_service.crear_pedido_desde_carrito(
+                cliente_id,
+                metodo_pago,
+                direccion_entrega,
+                usuario=request.user
+            )
+
+            from tienda.tasks import enviar_notificacion_compra_async, generar_reporte_ventas_async
+            enviar_notificacion_compra_async.delay(
+                resultado["pedido"].id,
+                request.user.email,
+                float(resultado["pedido"].total),
+                metodo_pago,
+            )
+            generar_reporte_ventas_async.delay()
             
             # Obtener información del usuario autenticado
             usuario_info = {
@@ -438,7 +443,7 @@ class CheckoutCarritoAPI(APIView):
             
             return Response(
                 {
-                    "mensaje": "Compra procesada exitosamente",
+                    "mensaje": _("Compra procesada exitosamente"),
                     "usuario": usuario_info,
                     "compra": compra_data
                 },
@@ -446,7 +451,7 @@ class CheckoutCarritoAPI(APIView):
             )
         except Cliente.DoesNotExist:
             return Response(
-                {"error": "Cliente no encontrado"},
+                {"error": _("Cliente no encontrado")},
                 status=status.HTTP_404_NOT_FOUND
             )
         except ValidationError as e:
@@ -550,7 +555,7 @@ class MisPedidosAPI(APIView):
         try:
             if not request.user.is_authenticated:
                 return Response(
-                    {"error": "Usuario no autenticado"},
+                    {"error": _("Usuario no autenticado")},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
             
@@ -578,7 +583,7 @@ class TodosPedidosAPI(APIView):
         try:
             if not request.user.is_superuser:
                 return Response(
-                    {"error": "Acceso denegado"},
+                    {"error": _("Acceso denegado")},
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -608,7 +613,7 @@ class ActualizarEstadoPedidoAPI(APIView):
         try:
             if not request.user.is_superuser:
                 return Response(
-                    {"error": "Acceso denegado"},
+                    {"error": _("Acceso denegado")},
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -617,7 +622,7 @@ class ActualizarEstadoPedidoAPI(APIView):
             
             if not nuevo_estado:
                 return Response(
-                    {"error": "estado es requerido"},
+                    {"error": _("estado es requerido")},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -627,14 +632,14 @@ class ActualizarEstadoPedidoAPI(APIView):
             serializer = PedidoSerializer(pedido)
             return Response(
                 {
-                    "mensaje": "Estado de pedido actualizado",
+                    "mensaje": _("Estado de pedido actualizado"),
                     "pedido": serializer.data
                 },
                 status=status.HTTP_200_OK
             )
         except Pedido.DoesNotExist:
             return Response(
-                {"error": "Pedido no encontrado"},
+                {"error": _("Pedido no encontrado")},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:

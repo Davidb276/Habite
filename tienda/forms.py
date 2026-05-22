@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django.utils.translation import gettext_lazy as _
 from .models import Cliente
 
 
@@ -12,16 +13,16 @@ class SignUpForm(UserCreationForm):
         required=True,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'correo@ejemplo.com'
+            'placeholder': _('correo@ejemplo.com')
         })
     )
     first_name = forms.CharField(
         max_length=100,
         required=True,
-        label='Nombre',
+        label=_('Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Tu nombre completo'
+            'placeholder': _('Tu nombre completo')
         })
     )
     
@@ -29,34 +30,34 @@ class SignUpForm(UserCreationForm):
     direccion = forms.CharField(
         max_length=255,
         required=True,
-        label='Dirección',
+        label=_('Dirección'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Calle, número, ciudad'
+            'placeholder': _('Calle, número, ciudad')
         })
     )
     telefono = forms.CharField(
         max_length=20,
         required=True,
-        label='Teléfono',
+        label=_('Teléfono'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '(+57) 123 456 7890'
+            'placeholder': _('(+57) 123 456 7890')
         })
     )
     
     password1 = forms.CharField(
-        label='Contraseña',
+        label=_('Contraseña'),
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Contraseña segura'
+            'placeholder': _('Contraseña segura')
         })
     )
     password2 = forms.CharField(
-        label='Confirmar contraseña',
+        label=_('Confirmar contraseña'),
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Repite tu contraseña'
+            'placeholder': _('Repite tu contraseña')
         })
     )
     
@@ -69,10 +70,10 @@ class SignUpForm(UserCreationForm):
         email = self.cleaned_data.get('email')
         
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Este email ya está registrado en usuario.")
+            raise forms.ValidationError(_("Este email ya está registrado en usuario."))
         
         if Cliente.objects.filter(email=email).exists():
-            raise forms.ValidationError("Este email ya está registrado como cliente.")
+            raise forms.ValidationError(_("Este email ya está registrado como cliente."))
         
         return email
     
@@ -82,7 +83,7 @@ class SignUpForm(UserCreationForm):
         password2 = self.cleaned_data.get('password2')
         
         if password1 and password2 and password1 != password2:
-            raise forms.ValidationError("Las contraseñas no coinciden.")
+            raise forms.ValidationError(_("Las contraseñas no coinciden."))
         
         return password2
     
@@ -122,25 +123,25 @@ class PerfilUsuarioForm(forms.ModelForm):
         required=True,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'correo@ejemplo.com'
+            'placeholder': _('correo@ejemplo.com')
         })
     )
     first_name = forms.CharField(
         max_length=100,
         required=True,
-        label='Nombre',
+        label=_('Nombre'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Tu nombre completo'
+            'placeholder': _('Tu nombre completo')
         })
     )
     last_name = forms.CharField(
         max_length=100,
         required=False,
-        label='Apellido',
+        label=_('Apellido'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Tu apellido (opcional)'
+            'placeholder': _('Tu apellido (opcional)')
         })
     )
     
@@ -155,19 +156,19 @@ class PerfilClienteForm(forms.ModelForm):
     direccion = forms.CharField(
         max_length=500,
         required=True,
-        label='Dirección de Envío',
+        label=_('Dirección de Envío'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Calle, número, ciudad, código postal'
+            'placeholder': _('Calle, número, ciudad, código postal')
         })
     )
     telefono = forms.CharField(
         max_length=20,
         required=True,
-        label='Teléfono',
+        label=_('Teléfono'),
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '(+57) 123 456 7890'
+            'placeholder': _('(+57) 123 456 7890')
         })
     )
     

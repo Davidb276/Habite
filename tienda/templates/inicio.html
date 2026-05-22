@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+{% load i18n %}
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HABITÉ | Premium para el Hogar</title>
+    <title>{% trans "HABITÉ | Premium para el Hogar" %}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -456,6 +457,92 @@
             color: var(--texto-gris);
             font-size: 18px;
             z-index: 2;
+        }
+
+        /* INTEGRATION SECTION */
+        .integration-section {
+            padding: 60px 20px 20px;
+            background: linear-gradient(180deg, #f8f6f2 0%, #ffffff 100%);
+        }
+
+        .integration-card {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid rgba(15, 61, 31, 0.12);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(15, 61, 31, 0.08);
+            padding: 28px;
+        }
+
+        .integration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .integration-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--verde);
+            font-size: 30px;
+            margin: 0;
+        }
+
+        .integration-badge {
+            background: var(--beige);
+            color: var(--verde);
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .integration-item {
+            background: var(--gris-claro);
+            border-radius: 18px;
+            padding: 18px;
+            min-height: 150px;
+        }
+
+        .integration-item h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--verde);
+            margin-bottom: 10px;
+        }
+
+        .integration-item p {
+            margin: 0;
+            color: var(--texto-gris);
+            line-height: 1.6;
+        }
+
+        .integration-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: white;
+            color: var(--verde);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 992px) {
+            .integration-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* CATEGORÍAS SECTION */
@@ -1719,6 +1806,17 @@
                         <i class="fas fa-sign-in-alt"></i>
                     </a>
                 {% endif %}
+                <form action="{% url 'set_language' %}" method="post" class="ms-2 d-flex align-items-center">
+                    {% csrf_token %}
+                    {% get_current_language as CURRENT_LANGUAGE %}
+                    {% get_available_languages as AVAILABLE_LANGUAGES %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="{% trans 'Idioma' %}">
+                        {% for code, name in AVAILABLE_LANGUAGES %}
+                            <option value="{{ code }}" {% if code == CURRENT_LANGUAGE %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
             </div>
         </div>
     </nav>
@@ -1726,14 +1824,14 @@
     <!-- HERO SECTION -->
     <section class="hero-section">
         <div class="hero-content">
-            <p class="hero-subtitle">Compra más. Ahorra más.</p>
-            <h1 class="hero-title">HABITÉ PREMIUM</h1>
+            <p class="hero-subtitle">{% trans "Compra más. Ahorra más." %}</p>
+            <h1 class="hero-title">{% trans "HABITÉ PREMIUM" %}</h1>
             <p class="hero-description">
-                Ahora 15% en compras de más de $500.000 y 20% en compras de más de $800.000.
+                {% trans "Ahora 15% en compras de más de $500.000 y 20% en compras de más de $800.000." %}
             </p>
             <div class="hero-buttons">
                 <a href="{% url 'catalogo' %}" class="btn-hero">
-                    <i class="fas fa-shopping-bag"></i> Comprar Ahora
+                    <i class="fas fa-shopping-bag"></i> {% trans "Comprar Ahora" %}
                 </a>
             </div>
         </div>
@@ -1741,17 +1839,58 @@
 
     <!-- SEARCH SECTION -->
     <section class="search-section">
-        <h2>¿Qué estás buscando?</h2>
+        <h2>{% trans "¿Qué estás buscando?" %}</h2>
         <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Busca por nombre, categoría..." onkeypress="buscarProductos(event)">
+            <input type="text" id="searchInput" placeholder="{% trans 'Busca por nombre, categoría...' %}" onkeypress="buscarProductos(event)">
             <i class="fas fa-search"></i>
+        </div>
+    </section>
+
+    <!-- INTEGRATION SECTION -->
+    <section class="integration-section">
+        <div class="integration-card">
+            <div class="integration-header">
+                <h2 class="integration-title">{% trans "Integración del sistema" %}</h2>
+                <div class="integration-badge">
+                    <i class="fas fa-plug me-2"></i>
+                    {% trans "Servicio aliado + Adapter de terceros" %}
+                </div>
+            </div>
+            <div class="integration-grid">
+                <div class="integration-item">
+                    <h3><i class="fas fa-server me-2"></i>{% trans "Microservicio aliado" %}</h3>
+                    <p>{{ integracion_sistema.servicio_aliado.message }}</p>
+                    <div class="integration-stat">
+                        <i class="fas fa-circle" style="color: {% if integracion_sistema.servicio_aliado.available %}#2e7d32{% else %}#d32f2f{% endif %};"></i>
+                        {% if integracion_sistema.servicio_aliado.available %}{% trans "Disponible" %}{% else %}{% trans "No disponible" %}{% endif %}
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <h3><i class="fas fa-cubes me-2"></i>{% trans "Resumen del sistema" %}</h3>
+                    <p>{% trans "Productos" %}: {{ integracion_sistema.resumen.productos }}<br>{% trans "Clientes" %}: {{ integracion_sistema.resumen.clientes }}<br>{% trans "Pedidos" %}: {{ integracion_sistema.resumen.pedidos }}<br>{% trans "Carritos" %}: {{ integracion_sistema.resumen.carritos }}</p>
+                    <div class="integration-stat">
+                        <i class="fas fa-database"></i>
+                        {{ integracion_sistema.servicio }} v{{ integracion_sistema.version }}
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <h3><i class="fas fa-code-branch me-2"></i>{% trans "API de terceros" %}</h3>
+                    <p>{{ integracion_sistema.api_terceros.message }}</p>
+                    {% if integracion_sistema.api_terceros.data %}
+                        <div class="integration-stat">
+                            <i class="fas fa-check-circle"></i>
+                            {{ integracion_sistema.api_terceros.data.data.title }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- CATEGORÍAS SECTION -->
     <section class="categories-section" id="categorias">
         <div class="categories-header">
-            <h2>Categorías</h2>
+            <h2>{% trans "Categorías" %}</h2>
         </div>
         <div class="categories-container">
             <button class="categories-nav prev" onclick="scrollCategoriesLeft()">
@@ -1782,10 +1921,10 @@
     <!-- PROMO SECTION -->
     <section class="promo-section" id="ofertas">
         <div class="promo-content">
-            <h3>Ofertas Exclusivas</h3>
-            <p>Descubre nuestras ofertas especiales y ahorra en tus productos favoritos. Solo por tiempo limitado.</p>
+            <h3>{% trans "Ofertas Exclusivas" %}</h3>
+            <p>{% trans "Descubre nuestras ofertas especiales y ahorra en tus productos favoritos. Solo por tiempo limitado." %}</p>
             <a href="{% url 'catalogo' %}?ofertas=true" class="btn-promo">
-                <i class="fas fa-tag"></i> Ver Todas las Ofertas
+                <i class="fas fa-tag"></i> {% trans "Ver Todas las Ofertas" %}
             </a>
         </div>
     </section>
@@ -1794,9 +1933,9 @@
     <section class="about-section" id="sobre-nosotros">
         <div class="about-container">
             <div class="about-content">
-                <h2>Sobre HABITÉ</h2>
-                <p>En HABITÉ, creemos que tu hogar es tu santuario. Desde 2015, nos hemos dedicado a traerte los artículos de decoración y mobiliario más exquisitos, seleccionados cuidadosamente para garantizar calidad y estilo.</p>
-                <p>Nuestro compromiso es transformar espacios ordinarios en lugares extraordinarios, donde cada rincón cuenta una historia de elegancia y comodidad.</p>
+                <h2>{% trans "Sobre HABITÉ" %}</h2>
+                <p>{% trans "En HABITÉ, creemos que tu hogar es tu santuario. Desde 2015, nos hemos dedicado a traerte los artículos de decoración y mobiliario más exquisitos, seleccionados cuidadosamente para garantizar calidad y estilo." %}</p>
+                <p>{% trans "Nuestro compromiso es transformar espacios ordinarios en lugares extraordinarios, donde cada rincón cuenta una historia de elegancia y comodidad." %}</p>
                 
                 <div class="about-features">
                     <div class="feature-item">
@@ -1804,8 +1943,8 @@
                             <i class="fas fa-award"></i>
                         </div>
                         <div class="feature-text">
-                            <h3>Calidad Premium</h3>
-                            <p>Cada producto es seleccionado bajo rigurosos estándares de calidad y diseño.</p>
+                            <h3>{% trans "Calidad Premium" %}</h3>
+                            <p>{% trans "Cada producto es seleccionado bajo rigurosos estándares de calidad y diseño." %}</p>
                         </div>
                     </div>
                     
@@ -1814,8 +1953,8 @@
                             <i class="fas fa-truck"></i>
                         </div>
                         <div class="feature-text">
-                            <h3>Entrega Rápida</h3>
-                            <p>Garantizamos entregas ágiles y seguras a cualquier rincón del país.</p>
+                            <h3>{% trans "Entrega Rápida" %}</h3>
+                            <p>{% trans "Garantizamos entregas ágiles y seguras a cualquier rincón del país." %}</p>
                         </div>
                     </div>
                     
@@ -1824,8 +1963,8 @@
                             <i class="fas fa-headset"></i>
                         </div>
                         <div class="feature-text">
-                            <h3>Atención al Cliente</h3>
-                            <p>Nuestro equipo está disponible para resolver cualquier duda o consulta.</p>
+                            <h3>{% trans "Atención al Cliente" %}</h3>
+                            <p>{% trans "Nuestro equipo está disponible para resolver cualquier duda o consulta." %}</p>
                         </div>
                     </div>
                 </div>
@@ -1840,21 +1979,21 @@
     <!-- TESTIMONIALS SECTION -->
     <section class="testimonials-section">
         <div class="testimonials-container">
-            <h2>Qué dicen nuestros clientes</h2>
+            <h2>{% trans "Qué dicen nuestros clientes" %}</h2>
             <div class="testimonials-grid">
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"Excelente calidad y diseño. Los productos superaron mis expectativas. Muy recomendado."</p>
+                    <p class="testimonial-text">{% trans '"Excelente calidad y diseño. Los productos superaron mis expectativas. Muy recomendado."' %}</p>
                     <p class="testimonial-author">- María González</p>
                 </div>
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"Entrega rápida y muy buena atención al cliente. Mi hogar se ve increíble ahora."</p>
+                    <p class="testimonial-text">{% trans '"Entrega rápida y muy buena atención al cliente. Mi hogar se ve increíble ahora."' %}</p>
                     <p class="testimonial-author">- Carlos Rodríguez</p>
                 </div>
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"Productos premium con precios justos. Definitivamente vuelvo a comprar."</p>
+                    <p class="testimonial-text">{% trans '"Productos premium con precios justos. Definitivamente vuelvo a comprar."' %}</p>
                     <p class="testimonial-author">- Laura Martínez</p>
                 </div>
             </div>
@@ -1864,7 +2003,7 @@
     <!-- FEATURED PRODUCTS SECTION -->
     <section class="featured-section">
         <div class="featured-container">
-            <h2>Productos Destacados</h2>
+            <h2>{% trans "Productos Destacados" %}</h2>
             <div style="position: relative;">
                 <button class="featured-nav prev" onclick="scrollFeaturedLeft()">
                     <i class="fas fa-chevron-left"></i>
@@ -1882,29 +2021,29 @@
     <!-- FAQ SECTION -->
     <section class="faq-section">
         <div class="faq-container">
-            <h2>Preguntas Frecuentes</h2>
+            <h2>{% trans "Preguntas Frecuentes" %}</h2>
             <div class="faq-list">
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFAQ(this)">
-                        <span>¿Cuáles son los costos de envío?</span>
+                        <span>{% trans "¿Cuáles son los costos de envío?" %}</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Ofrecemos envío gratis en compras de más de $500.000 en la mayoría del país. Para compras menores, el costo varía según tu ubicación.</p>
+                        <p>{% trans "Ofrecemos envío gratis en compras de más de $500.000 en la mayoría del país. Para compras menores, el costo varía según tu ubicación." %}</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFAQ(this)">
-                        <span>¿Cuál es el tiempo de entrega?</span>
+                        <span>{% trans "¿Cuál es el tiempo de entrega?" %}</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>Generalmente entregamos entre 5-10 días hábiles dependiendo de tu ubicación. En algunos casos especiales puede tomar hasta 15 días.</p>
+                        <p>{% trans "Generalmente entregamos entre 5-10 días hábiles dependiendo de tu ubicación. En algunos casos especiales puede tomar hasta 15 días." %}</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <button class="faq-question" onclick="toggleFAQ(this)">
-                        <span>¿Cómo puedo devolver un producto?</span>
+                        <span>{% trans "¿Cómo puedo devolver un producto?" %}</span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="faq-answer">

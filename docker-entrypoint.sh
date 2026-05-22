@@ -1,34 +1,29 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-echo "🚀 Iniciando Habité..."
+echo "Starting Habite Django container"
 
-# Aplicar migraciones
-echo "📦 Aplicando migraciones..."
+echo "Applying migrations"
 python manage.py migrate --noinput
 
-# Recopilar archivos estáticos
-echo "📁 Compilando archivos estáticos..."
+echo "Collecting static files"
 python manage.py collectstatic --noinput
 
-# Crear datos iniciales si no existen
-echo "🎨 Verificando datos iniciales..."
-python manage.py shell << END
-from tienda.models import Producto, Categoria
+echo "Checking initial data"
+python manage.py shell <<'END'
+from tienda.models import Producto
 
-# Si no hay productos, crear automáticamente
 if Producto.objects.count() == 0:
-    print("✅ Creando categorías y productos iniciales...")
+    print("Creating initial categories and products")
     import subprocess
     subprocess.run(['python', 'create_categories.py'], check=True)
     subprocess.run(['python', 'manage.py', 'crear_productos'], check=True)
-    print("✅ Datos iniciales generados!")
+    print("Initial data created")
 else:
-    print("✅ Los datos ya existen, saltando inicialización")
+    print("Initial data already exists")
 END
 
-# Iniciar Gunicorn
-echo "🌐 Iniciando servidor Django..."
+echo "Starting Gunicorn"
 exec gunicorn habite_project.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 2 \

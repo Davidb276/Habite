@@ -8,8 +8,49 @@ from django.urls import reverse_lazy
 from django.contrib.auth.models import User
 from django.http import Http404, HttpResponse, FileResponse
 from django.db.models import Q
+import requests
+import os
+import logging
+from django.utils.translation import gettext as _
 from .models import Producto, Pedido, Pago, Envio, Cliente, Categoria
 from .forms import SignUpForm, PerfilUsuarioForm, PerfilClienteForm
+
+logger = logging.getLogger(__name__)
+
+
+def obtener_info_integracion_sistema():
+    core_url = os.getenv("HABITE_CORE_SERVICE_URL", "http://flask_core:5001").rstrip("/")
+    fallback = {
+        "servicio": _("Habite Core Service"),
+        "version": "N/A",
+        "ambiente": _("desconocido"),
+        "resumen": {
+            "productos": 0,
+            "clientes": 0,
+            "pedidos": 0,
+            "carritos": 0,
+        },
+        "servicio_aliado": {
+            "available": False,
+            "message": _("No disponible"),
+            "status_code": None,
+        },
+        "api_terceros": {
+            "available": False,
+            "message": _("No disponible"),
+            "data": None,
+        },
+    }
+
+    try:
+        response = requests.get(f"{core_url}/api/v2/sistema/info", timeout=8)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as exc:
+        logger.warning(_("No fue posible consultar el servicio aliado: %s"), exc)
+        fallback["servicio_aliado"]["message"] = str(exc)
+        fallback["api_terceros"]["message"] = str(exc)
+        return fallback
 
 
 class InicioView(TemplateView):
@@ -20,6 +61,8 @@ class InicioView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['categorias'] = Categoria.objects.all()
         context['ofertas'] = Producto.objects.filter(en_oferta=True).order_by('-descuento_porcentaje')[:6]
+        context['integracion_sistema'] = obtener_info_integracion_sistema()
+        context['titulo_inicio'] = _("Inicio")
         return context
 
 
@@ -64,15 +107,15 @@ class CatalogoView(ListView):
         mostrar_ofertas = self.request.GET.get('ofertas')
         
         if mostrar_ofertas == 'true':
-            context['titulo_catalogo'] = "Ofertas Disponibles"
+            context['titulo_catalogo'] = _("Ofertas Disponibles")
         elif categoria_slug:
             try:
                 context['categoria_seleccionada'] = Categoria.objects.get(slug=categoria_slug)
-                context['titulo_catalogo'] = f"Catálogo - {context['categoria_seleccionada'].nombre}"
+                context['titulo_catalogo'] = _("Catálogo") + f" - {context['categoria_seleccionada'].nombre}"
             except Categoria.DoesNotExist:
-                context['titulo_catalogo'] = "Catálogo"
+                context['titulo_catalogo'] = _("Catálogo")
         else:
-            context['titulo_catalogo'] = "Catálogo"
+            context['titulo_catalogo'] = _("Catálogo")
         
         return context
 
@@ -118,8 +161,8 @@ class SignUpView(FormView):
     def get_context_data(self, **kwargs):
         """Añade información al contexto del template"""
         context = super().get_context_data(**kwargs)
-        context['form_title'] = 'Crear Cuenta'
-        context['form_subtitle'] = 'Únete a HABITÉ y comienza a comprar'
+        context['form_title'] = _('Crear Cuenta')
+        context['form_subtitle'] = _('Únete a HABITÉ y comienza a comprar')
         return context
 
 
@@ -288,7 +331,7 @@ def descargar_factura(request, pedido_id):
     
     # Verificar que el usuario sea el propietario del pedido o admin
     if request.user != pedido.usuario and not request.user.is_superuser:
-        raise Http404("No tienes acceso a esta factura")
+        raise Http404(_("No tienes acceso a esta factura"))
     
     # Intenta usar Flask primero
     try:
@@ -333,7 +376,7 @@ def descargar_factura(request, pedido_id):
     except Exception as e:
         # Si hay error con Flask, registrarlo pero continuar con fallback
         import logging
-        logging.debug(f"Error llamando a Flask: {str(e)}")
+        logging.debug(_("Error llamando a Flask: %s"), str(e))
     
     # Fallback: Generar PDF localmente en Django
     try:
@@ -342,7 +385,7 @@ def descargar_factura(request, pedido_id):
         response['Content-Type'] = 'application/pdf'
         return response
     except Exception as e:
-        raise Http404(f"Error generando factura: {str(e)}")
+        raise Http404(_("Error generando factura: %s") % str(e))
 
 
 @login_required(login_url='login')
@@ -354,13 +397,16 @@ def pagar_ahora(request, pedido_id):
     
     # Verificar que el usuario sea el propietario del pedido
     if request.user != pedido.usuario and not request.user.is_superuser:
-        raise Http404("No tienes acceso a este pedido")
+        raise Http404(_("No tienes acceso a este pedido"))
     
     # Generar PDF solo para verificar que funciona
     pdf_buffer = FacturaService.generar_factura_pdf(pedido)
     
     # Mensaje para WhatsApp mejorado
-    mensaje = f"Hola HABITÉ, ya realicé la transferencia por Bancolombia del pedido #{pedido.id} por ${pedido.total:,.0f} COP. Le adjunto el comprobante de pago. Gracias 🙏"
+    mensaje = _("Hola HABITÉ, ya realicé la transferencia por Bancolombia del pedido #%(pedido_id)s por $%(total)s COP. Le adjunto el comprobante de pago. Gracias") % {
+        'pedido_id': pedido.id,
+        'total': f"{pedido.total:,.0f}",
+    }
     
     # Número de WhatsApp (el número de HABITÉ)
     numero_whatsapp = "573238071236"

@@ -27,6 +27,18 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
+DJANGO_PROJECT_ROOT = os.getenv("DJANGO_PROJECT_ROOT", "/workspace")
+if DJANGO_PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, DJANGO_PROJECT_ROOT)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "habite_project.settings")
+
+import django  # noqa: E402
+
+django.setup()
+
+from tienda.models import Pedido, Pago  # noqa: E402
+
 # ==================== CONFIGURACIÓN ====================
 
 class Config:
@@ -433,6 +445,30 @@ def procesar_pago():
             return error_response("Body no puede estar vacío", 400)
         
         resultado = PagoService.procesar_pago(data)
+
+        pedido_id = resultado.get('pedido_id')
+        monto = resultado.get('monto')
+        metodo = resultado.get('metodo')
+        estado_pago = 'aprobado' if resultado.get('estado') == 'aprobado' else resultado.get('estado', 'pendiente')
+
+        try:
+            pedido = Pedido.objects.get(id=pedido_id)
+            pago, _ = Pago.objects.update_or_create(
+                pedido=pedido,
+                defaults={
+                    'metodo_pago': metodo,
+                    'monto': monto,
+                    'estado': estado_pago,
+                },
+            )
+            if estado_pago == 'aprobado':
+                pedido.estado = 'Pagado'
+                pedido.save(update_fields=['estado'])
+            resultado['pago_id'] = pago.id
+            resultado['estado_pago_db'] = pago.estado
+        except Pedido.DoesNotExist:
+            logger.warning(f"Pedido #{pedido_id} no existe en BD local para guardar el pago")
+
         return jsonify(resultado), 200
         
     except DatosInvalidosError as e:

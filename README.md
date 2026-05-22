@@ -14,9 +14,11 @@
 
 A partir de **Abril 2026**, Habité implementó el patrón arquitectónico **Strangler Pattern** para evolucionar gradualmente de un monolito Django a una arquitectura de microservicios.
 
-**Módulo Estrangulado**: Procesamiento de Pagos & Generación de Facturas  
-**Justificación**: Cuello de botella (genera PDFs que bloquean el monolito)  
-**Solución**: Microservicio Flask independiente
+**Módulos estrangulados**:
+- Core business: inventario, carrito, pedidos, clientes y envíos
+- Procesamiento de pagos & generación de facturas
+
+**Justificación**: separar la lógica de negocio más pesada y dejar Django como capa web y compatibilidad temporal.
 
 ---
 
@@ -25,19 +27,17 @@ A partir de **Abril 2026**, Habité implementó el patrón arquitectónico **Str
 ```
 ┌──────────────────────────────────┐         ┌──────────────────────┐
 │    DJANGO (Monolito Ligero)       │         │  FLASK (Microservicio)
-├──────────────────────────────────┤         ├──────────────────────┤
-│ • Autenticación                  │         │ • Generación PDF     │
-│ • Catálogo de Productos          │◄───────►│ • Procesamiento Pagos│
-│ • Carrito de Compras             │ Nginx   │ • Notificaciones WA  │
-│ • Gestión de Pedidos             │         │ • Reportes           │
-│ • Clientes                       │         │ (Lightw: 30-50 MB)   │
-└──────────────────────────────────┘         └──────────────────────┘
-         ↓                                              ↓
-      Django 5.2.4              Nginx Router          Flask 3.0.0
-      Gunicorn                  (/api/v2/*)           Gunicorn
-      8000                      80                    5000
-```
-
+┌──────────────────────────────────┐    ┌──────────────────────────────────┐    ┌──────────────────────────────┐
+│    DJANGO (Fachada Web)          │    │  FLASK CORE (Business Service)   │    │ FLASK PAYMENT (Billing)      │
+├──────────────────────────────────┤    ├──────────────────────────────────┤    ├──────────────────────────────┤
+│ • Autenticación                  │◄───►│ • Inventario                     │    │ • Procesamiento de pagos     │
+│ • Templates / UI                 │    │ • Carrito                        │◄───►│ • Generación de facturas PDF  │
+│ • Admin                          │    │ • Pedidos                        │    │ • WhatsApp / reportes         │
+│ • Vistas públicas                │    │ • Clientes                       │    └──────────────────────────────┘
+│ • API legacy                     │    │ • Envíos                         │
+└──────────────────────────────────┘    └──────────────────────────────────┘
+                               ↓                                  ↓
+                         Nginx router                    Nginx routes /api/v2/*
 ---
 
 ## ⚡ Características
@@ -138,7 +138,7 @@ Habité/
 # 1. Clonar repositorio
 git clone <url> && cd Habité
 
-# 2. Levantar servicios (Django + Flask + Nginx + BD)
+# 2. Levantar servicios (Django + Flask core + Flask pagos + Nginx + BD)
 docker-compose up -d
 
 # 3. Crear datos de prueba
